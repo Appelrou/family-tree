@@ -544,7 +544,133 @@
     .result-relationship { font-size: 1.5rem; }
   }
 </style>
+
+</head>
+<body>
+
+<header>
+  <span class="header-ornament">🌳</span>
+  <h1>Family Relationship Finder</h1>
+  <p>Powered by your Geni family tree</p>
+  <div class="divider-line"></div>
+</header>
+
+<main>
+
+  <!-- PHASE 1: Login -->
+  <div class="phase active" id="phase-login">
+    <div class="login-card">
+      <span class="tree-icon">🔐</span>
+      <h2>Connect Your Family Tree</h2>
+      <p>Sign in with your Geni account to load your family tree. This happens once — after that, you can share the finder with anyone in the family without them needing to log in.</p>
+      <button class="btn-geni" onclick="startGeniAuth()">
+        🌳 Connect with Geni
+      </button>
+      <div class="privacy-note">
+        🔒 Read-only access &nbsp;·&nbsp; Your data stays in this browser
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2: Loading tree -->
+  <div class="phase" id="phase-loading">
+    <div class="loading-card">
+      <span class="tree-loader">🌳</span>
+      <h2>Growing your family tree…</h2>
+      <p id="loading-subtitle" style="color:#888;font-size:0.88rem;margin-top:6px;">Connecting to Geni</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="loading-status" id="loading-status">Authenticating…</div>
+      <div class="loading-count" id="loading-count"></div>
+      <div style="margin-top:24px;">
+        <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
+      </div>
+    </div>
+    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
+  </div>
+
+  <!-- PHASE 3: Relationship Finder -->
+  <div class="phase" id="phase-finder">
+    <div class="finder-header">
+      <h2>Find a Relationship</h2>
+      <span class="tree-count-badge" id="tree-count-badge">0 people</span>
+    </div>
+
+    <div class="selector-row">
+      <!-- Person A -->
+      <div class="person-selector" id="selector-a">
+        <label>First Person</label>
+        <div class="search-input-wrap" style="position:relative">
+          <div class="selected-person" id="selected-a">
+            <div class="person-avatar" id="avatar-a">👤</div>
+            <span class="person-name-selected" id="name-a"></span>
+            <button class="clear-btn" onclick="clearPerson('a')" title="Clear">✕</button>
+          </div>
+          <input type="text" id="search-a" placeholder="Search by name…" oninput="handleSearch(this,'a')" onfocus="openDropdown('a')" autocomplete="off">
+          <div class="dropdown" id="dropdown-a"></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="connector-col">⟷</div>
+
+      <!-- Person B -->
+      <div class="person-selector" id="selector-b">
+        <label>Second Person</label>
+        <div class="search-input-wrap" style="position:relative">
+          <div class="selected-person" id="selected-b">
+            <div class="person-avatar" id="avatar-b">👤</div>
+            <span class="person-name-selected" id="name-b"></span>
+            <button class="clear-btn" onclick="clearPerson('b')" title="Clear">✕</button>
+          </div>
+          <input type="text" id="search-b" placeholder="Search by name…" oninput="handleSearch(this,'b')" onfocus="openDropdown('b')" autocomplete="off">
+          <div class="dropdown" id="dropdown-b"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="find-btn-wrap">
+      <button class="find-btn" id="find-btn" onclick="findRelationship()" disabled>
+        Find Relationship
+      </button>
+    </div>
+
+    <!-- Error -->
+    <div class="error-card" id="error-card">
+      <p id="error-msg">Something went wrong.</p>
+    </div>
+
+    <!-- Result -->
+    <div class="result-card" id="result-card">
+      <div class="result-banner">
+        <div class="result-relationship" id="result-relationship">—</div>
+        <div class="result-names" id="result-names"></div>
+      </div>
+      <div class="result-body">
+        <div class="path-section">
+          <h3>🔗 Connection Path</h3>
+          <div class="path-chain" id="path-chain"></div>
+        </div>
+        <div class="result-meta" id="result-meta"></div>
+      </div>
+    </div>
+
+    <div class="refresh-row">
+      <button class="refresh-btn" onclick="refreshTree()">↻ Reload tree data</button>
+      &nbsp;
+      <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
+    </div>
+    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
+  </div>
+
+</main>
+
+<footer>Family Relationship Finder · Built with the Geni API · Data stays in your browser</footer>
+
+
 <script>
+
 // ============================================================
 // CONFIG
 // ============================================================
@@ -565,7 +691,6 @@ let selectedB = null;
 // ============================================================
 // BOOT — check for token in URL hash (OAuth callback)
 // ============================================================
-window.addEventListener('DOMContentLoaded', function() {
 (function boot() {
   const hash = parseHash();
   if (hash.access_token) {
@@ -590,7 +715,6 @@ window.addEventListener('DOMContentLoaded', function() {
     showPhase('login');
   }
 })();
-}); // end DOMContentLoaded
 
 function parseHash() {
   // Geni may return token as query param (?) or hash (#)
@@ -1279,130 +1403,7 @@ function escHtml(str) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 </script>
-</head>
-<body>
-
-<header>
-  <span class="header-ornament">🌳</span>
-  <h1>Family Relationship Finder</h1>
-  <p>Powered by your Geni family tree</p>
-  <div class="divider-line"></div>
-</header>
-
-<main>
-
-  <!-- PHASE 1: Login -->
-  <div class="phase active" id="phase-login">
-    <div class="login-card">
-      <span class="tree-icon">🔐</span>
-      <h2>Connect Your Family Tree</h2>
-      <p>Sign in with your Geni account to load your family tree. This happens once — after that, you can share the finder with anyone in the family without them needing to log in.</p>
-      <button class="btn-geni" onclick="startGeniAuth()">
-        🌳 Connect with Geni
-      </button>
-      <div class="privacy-note">
-        🔒 Read-only access &nbsp;·&nbsp; Your data stays in this browser
-      </div>
-    </div>
-  </div>
-
-  <!-- PHASE 2: Loading tree -->
-  <div class="phase" id="phase-loading">
-    <div class="loading-card">
-      <span class="tree-loader">🌳</span>
-      <h2>Growing your family tree…</h2>
-      <p id="loading-subtitle" style="color:#888;font-size:0.88rem;margin-top:6px;">Connecting to Geni</p>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-      <div class="loading-status" id="loading-status">Authenticating…</div>
-      <div class="loading-count" id="loading-count"></div>
-      <div style="margin-top:24px;">
-        <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
-      </div>
-    </div>
-    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
-  </div>
-
-  <!-- PHASE 3: Relationship Finder -->
-  <div class="phase" id="phase-finder">
-    <div class="finder-header">
-      <h2>Find a Relationship</h2>
-      <span class="tree-count-badge" id="tree-count-badge">0 people</span>
-    </div>
-
-    <div class="selector-row">
-      <!-- Person A -->
-      <div class="person-selector" id="selector-a">
-        <label>First Person</label>
-        <div class="search-input-wrap" style="position:relative">
-          <div class="selected-person" id="selected-a">
-            <div class="person-avatar" id="avatar-a">👤</div>
-            <span class="person-name-selected" id="name-a"></span>
-            <button class="clear-btn" onclick="clearPerson('a')" title="Clear">✕</button>
-          </div>
-          <input type="text" id="search-a" placeholder="Search by name…" oninput="handleSearch(this,'a')" onfocus="openDropdown('a')" autocomplete="off">
-          <div class="dropdown" id="dropdown-a"></div>
-        </div>
-      </div>
-
-      <!-- Connector -->
-      <div class="connector-col">⟷</div>
-
-      <!-- Person B -->
-      <div class="person-selector" id="selector-b">
-        <label>Second Person</label>
-        <div class="search-input-wrap" style="position:relative">
-          <div class="selected-person" id="selected-b">
-            <div class="person-avatar" id="avatar-b">👤</div>
-            <span class="person-name-selected" id="name-b"></span>
-            <button class="clear-btn" onclick="clearPerson('b')" title="Clear">✕</button>
-          </div>
-          <input type="text" id="search-b" placeholder="Search by name…" oninput="handleSearch(this,'b')" onfocus="openDropdown('b')" autocomplete="off">
-          <div class="dropdown" id="dropdown-b"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="find-btn-wrap">
-      <button class="find-btn" id="find-btn" onclick="findRelationship()" disabled>
-        Find Relationship
-      </button>
-    </div>
-
-    <!-- Error -->
-    <div class="error-card" id="error-card">
-      <p id="error-msg">Something went wrong.</p>
-    </div>
-
-    <!-- Result -->
-    <div class="result-card" id="result-card">
-      <div class="result-banner">
-        <div class="result-relationship" id="result-relationship">—</div>
-        <div class="result-names" id="result-names"></div>
-      </div>
-      <div class="result-body">
-        <div class="path-section">
-          <h3>🔗 Connection Path</h3>
-          <div class="path-chain" id="path-chain"></div>
-        </div>
-        <div class="result-meta" id="result-meta"></div>
-      </div>
-    </div>
-
-    <div class="refresh-row">
-      <button class="refresh-btn" onclick="refreshTree()">↻ Reload tree data</button>
-      &nbsp;
-      <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
-    </div>
-    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
-  </div>
-
-</main>
-
-<footer>Family Relationship Finder · Built with the Geni API · Data stays in your browser</footer>
-
-
 </body>
 </html>
