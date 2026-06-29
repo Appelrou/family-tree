@@ -5,874 +5,362 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Relationship Finder</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
-
-  :root {
-    --ink: #1a1a1a;
-    --parchment: #faf7f2;
-    --aged: #f0ebe1;
-    --gold: #b8860b;
-    --gold-light: #d4a017;
-    --gold-pale: #f5e9c8;
-    --branch: #5c4a2a;
-    --branch-light: #8b6e3e;
-    --mist: #e8e2d8;
-    --green: #2d5a3d;
-    --error: #8b2020;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--parchment);
-    color: var(--ink);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* === HEADER === */
-  header {
-    width: 100%;
-    background: var(--branch);
-    padding: 28px 24px 24px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 20px,
-      rgba(255,255,255,0.02) 20px,
-      rgba(255,255,255,0.02) 40px
-    );
-  }
-  .header-ornament {
-    font-size: 28px;
-    margin-bottom: 8px;
-    display: block;
-    opacity: 0.85;
-  }
-  header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--gold-pale);
-    letter-spacing: 0.02em;
-    position: relative;
-  }
-  header p {
-    color: rgba(245, 233, 200, 0.7);
-    font-size: 0.85rem;
-    margin-top: 6px;
-    font-weight: 300;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    position: relative;
-  }
-  .divider-line {
-    width: 80px;
-    height: 1px;
-    background: var(--gold);
-    margin: 14px auto 0;
-    opacity: 0.6;
-    position: relative;
-  }
-
-  /* === MAIN CONTAINER === */
-  main {
-    width: 100%;
-    max-width: 680px;
-    padding: 32px 20px 60px;
-  }
-
-  /* === PHASE PANELS === */
-  .phase {
-    display: none;
-    animation: fadeIn 0.35s ease;
-  }
-  .phase.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* === LOGIN PHASE === */
-  .login-card {
-    background: white;
-    border: 1px solid var(--mist);
-    border-radius: 12px;
-    padding: 40px 36px;
-    text-align: center;
-    box-shadow: 0 2px 20px rgba(92,74,42,0.08);
-  }
-  .login-card .tree-icon {
-    font-size: 52px;
-    display: block;
-    margin-bottom: 20px;
-  }
-  .login-card h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    color: var(--branch);
-    margin-bottom: 10px;
-  }
-  .login-card p {
-    color: #666;
-    font-size: 0.9rem;
-    line-height: 1.65;
-    margin-bottom: 28px;
-    max-width: 380px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .btn-geni {
-    background: var(--branch);
-    color: var(--gold-pale);
-    border: none;
-    border-radius: 8px;
-    padding: 14px 32px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    letter-spacing: 0.02em;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .btn-geni:hover { background: var(--branch-light); transform: translateY(-1px); }
-  .btn-geni:active { transform: translateY(0); }
-  .privacy-note {
-    margin-top: 20px;
-    font-size: 0.78rem;
-    color: #999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  /* === LOADING PHASE === */
-  .loading-card {
-    background: white;
-    border: 1px solid var(--mist);
-    border-radius: 12px;
-    padding: 48px 36px;
-    text-align: center;
-    box-shadow: 0 2px 20px rgba(92,74,42,0.08);
-  }
-  .tree-loader {
-    font-size: 42px;
-    animation: sway 2s ease-in-out infinite;
-    display: block;
-    margin-bottom: 20px;
-  }
-  @keyframes sway {
-    0%, 100% { transform: rotate(-3deg); }
-    50% { transform: rotate(3deg); }
-  }
-  .loading-card h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    color: var(--branch);
-    margin-bottom: 8px;
-  }
-  .progress-bar-wrap {
-    background: var(--aged);
-    border-radius: 99px;
-    height: 6px;
-    margin: 24px auto 12px;
-    max-width: 320px;
-    overflow: hidden;
-  }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light));
-    border-radius: 99px;
-    width: 0%;
-    transition: width 0.4s ease;
-  }
-  .loading-status {
-    font-size: 0.82rem;
-    color: #888;
-    min-height: 20px;
-  }
-  .loading-count {
-    font-size: 0.9rem;
-    color: var(--branch);
-    font-weight: 500;
-    margin-top: 6px;
-  }
-
-  /* === FINDER PHASE === */
-  .finder-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-  }
-  .finder-header h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.3rem;
-    color: var(--branch);
-  }
-  .tree-count-badge {
-    background: var(--gold-pale);
-    color: var(--branch);
-    border: 1px solid var(--gold);
-    border-radius: 99px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 4px 12px;
-  }
-
-  .selector-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 12px;
-    align-items: start;
-    margin-bottom: 20px;
-  }
-  .connector-col {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 32px;
-    color: var(--branch-light);
-    font-size: 1.2rem;
-  }
-
-  .person-selector {
-    background: white;
-    border: 1.5px solid var(--mist);
-    border-radius: 10px;
-    padding: 14px;
-    transition: border-color 0.2s;
-  }
-  .person-selector:focus-within { border-color: var(--gold); }
-  .person-selector label {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--branch-light);
-    margin-bottom: 8px;
-  }
-  .search-input-wrap { position: relative; }
-  .search-input-wrap input {
-    width: 100%;
-    border: none;
-    outline: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    color: var(--ink);
-    background: transparent;
-    padding: 0;
-  }
-  .search-input-wrap input::placeholder { color: #bbb; }
-
-  /* Selected person display */
-  .selected-person {
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
-  .selected-person.visible { display: flex; }
-  .person-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--aged);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-    border: 1px solid var(--mist);
-  }
-  .person-name-selected {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--ink);
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .clear-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #bbb;
-    font-size: 16px;
-    padding: 0;
-    line-height: 1;
-  }
-  .clear-btn:hover { color: var(--error); }
-
-  /* Dropdown */
-  .dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: -14px;
-    right: -14px;
-    background: white;
-    border: 1.5px solid var(--gold);
-    border-radius: 8px;
-    max-height: 220px;
-    overflow-y: auto;
-    z-index: 100;
-    box-shadow: 0 8px 24px rgba(92,74,42,0.15);
-    display: none;
-  }
-  .dropdown.open { display: block; }
-  .dropdown-item {
-    padding: 10px 14px;
-    cursor: pointer;
-    font-size: 0.88rem;
-    border-bottom: 1px solid var(--aged);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: background 0.12s;
-  }
-  .dropdown-item:last-child { border-bottom: none; }
-  .dropdown-item:hover { background: var(--gold-pale); }
-  .dropdown-item .item-dates {
-    font-size: 0.75rem;
-    color: #999;
-    margin-left: auto;
-    white-space: nowrap;
-  }
-  .dropdown-empty {
-    padding: 16px 14px;
-    color: #aaa;
-    font-size: 0.85rem;
-    text-align: center;
-  }
-
-  /* === FIND BUTTON === */
-  .find-btn-wrap { text-align: center; margin: 4px 0 28px; }
-  .find-btn {
-    background: var(--gold);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 14px 48px;
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s, opacity 0.2s;
-    letter-spacing: 0.02em;
-  }
-  .find-btn:hover:not(:disabled) { background: var(--gold-light); transform: translateY(-1px); }
-  .find-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* === RESULT CARD === */
-  .result-card {
-    background: white;
-    border: 1px solid var(--mist);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 20px rgba(92,74,42,0.08);
-    display: none;
-  }
-  .result-card.visible { display: block; animation: fadeIn 0.4s ease; }
-
-  .result-banner {
-    background: linear-gradient(135deg, var(--branch) 0%, var(--branch-light) 100%);
-    padding: 28px 28px 24px;
-    text-align: center;
-    position: relative;
-  }
-  .result-banner::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0; right: 0;
-    height: 20px;
-    background: white;
-    clip-path: ellipse(55% 100% at 50% 100%);
-  }
-  .result-relationship {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.9rem;
-    font-weight: 700;
-    color: var(--gold-pale);
-    margin-bottom: 4px;
-    line-height: 1.2;
-  }
-  .result-names {
-    color: rgba(245,233,200,0.7);
-    font-size: 0.82rem;
-    letter-spacing: 0.04em;
-  }
-
-  .result-body { padding: 28px; }
-
-  .path-section h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    color: var(--branch);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .path-chain {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-  .path-node {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .path-node-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--gold);
-    flex-shrink: 0;
-    position: relative;
-    z-index: 1;
-  }
-  .path-node-name {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .path-node-rel {
-    font-size: 0.75rem;
-    color: #999;
-    margin-left: 4px;
-  }
-  .path-connector {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    height: 24px;
-  }
-  .path-connector-line-wrap {
-    width: 10px;
-    display: flex;
-    justify-content: center;
-  }
-  .path-connector-line {
-    width: 2px;
-    background: var(--gold);
-    opacity: 0.35;
-    flex: 1;
-  }
-  .path-connector-label {
-    font-size: 0.72rem;
-    color: #bbb;
-    align-self: center;
-    font-style: italic;
-  }
-
-  .result-meta {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--aged);
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .meta-item {
-    font-size: 0.8rem;
-    color: #888;
-  }
-  .meta-item strong { color: var(--branch); font-weight: 600; }
-
-  /* Error state */
-  .error-card {
-    background: #fff5f5;
-    border: 1px solid #f5c6c6;
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    display: none;
-  }
-  .error-card.visible { display: block; animation: fadeIn 0.3s ease; }
-  .error-card p { color: var(--error); font-size: 0.9rem; }
-
-  /* === REFRESH BUTTON === */
-  .refresh-row {
-    text-align: center;
-    margin-top: 32px;
-    padding-top: 20px;
-    border-top: 1px solid var(--mist);
-  }
-  .refresh-btn {
-    background: none;
-    border: 1.5px solid var(--mist);
-    border-radius: 8px;
-    padding: 8px 20px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
-    color: #999;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .refresh-btn:hover { border-color: var(--branch-light); color: var(--branch); }
-
-  /* === FOOTER === */
-  footer {
-    margin-top: auto;
-    padding: 20px;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #bbb;
-  }
-
-  @media (max-width: 520px) {
-    header h1 { font-size: 1.5rem; }
-    .selector-row { grid-template-columns: 1fr; gap: 8px; }
-    .connector-col { padding-top: 0; flex-direction: row; }
-    .login-card, .loading-card { padding: 28px 20px; }
-    .result-relationship { font-size: 1.5rem; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+:root{--ink:#1a1a1a;--parchment:#faf7f2;--aged:#f0ebe1;--gold:#b8860b;--gold-light:#d4a017;--gold-pale:#f5e9c8;--branch:#5c4a2a;--branch-light:#8b6e3e;--mist:#e8e2d8;--green:#2d5a3d;--error:#8b2020}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+header{width:100%;background:var(--branch);padding:28px 24px 24px;text-align:center}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold-pale)}
+header p{color:rgba(245,233,200,0.7);font-size:0.85rem;margin-top:6px;letter-spacing:0.05em;text-transform:uppercase}
+main{width:100%;max-width:680px;padding:32px 20px 60px}
+.phase{display:none;animation:fadeIn 0.35s ease}
+.phase.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:white;border:1px solid var(--mist);border-radius:12px;padding:40px 36px;text-align:center;box-shadow:0 2px 20px rgba(92,74,42,0.08)}
+.card h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--branch);margin-bottom:10px}
+.card p{color:#666;font-size:0.9rem;line-height:1.65;margin-bottom:20px}
+.card ol{text-align:left;font-size:0.88rem;color:#666;line-height:2.2;margin-bottom:24px;padding-left:24px}
+.btn{background:var(--branch);color:var(--gold-pale);border:none;border-radius:8px;padding:14px 32px;font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.2s;display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.btn:hover{background:var(--branch-light)}
+.btn-gold{background:var(--gold)}
+.btn-gold:hover{background:var(--gold-light)}
+.token-row{display:flex;gap:8px;margin-top:8px}
+.token-row input{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:Inter,sans-serif}
+.token-row input:focus{outline:none;border-color:var(--gold)}
+.privacy-note{margin-top:16px;font-size:0.78rem;color:#999}
+.tree-loader{font-size:42px;animation:sway 2s ease-in-out infinite;display:block;margin-bottom:20px}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.progress-bar-wrap{background:var(--aged);border-radius:99px;height:6px;margin:24px auto 12px;max-width:320px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:99px;width:0%;transition:width 0.4s ease}
+.loading-status{font-size:0.82rem;color:#888;min-height:20px}
+.loading-count{font-size:0.9rem;color:var(--branch);font-weight:500;margin-top:6px}
+.finder-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.finder-header h2{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--branch)}
+.badge{background:var(--gold-pale);color:var(--branch);border:1px solid var(--gold);border-radius:99px;font-size:0.78rem;font-weight:600;padding:4px 12px}
+.selector-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;margin-bottom:20px}
+.connector-col{display:flex;align-items:center;justify-content:center;padding-top:32px;color:var(--branch-light);font-size:1.2rem}
+.person-selector{background:white;border:1.5px solid var(--mist);border-radius:10px;padding:14px;transition:border-color 0.2s}
+.person-selector:focus-within{border-color:var(--gold)}
+.person-selector label{display:block;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--branch-light);margin-bottom:8px}
+.search-wrap{position:relative}
+.search-wrap input{width:100%;border:none;outline:none;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--ink);background:transparent;padding:0}
+.search-wrap input::placeholder{color:#bbb}
+.selected-person{display:none;align-items:center;gap:8px}
+.selected-person.visible{display:flex}
+.person-name-sel{font-size:0.9rem;font-weight:500;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clear-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:16px;padding:0;line-height:1}
+.clear-btn:hover{color:var(--error)}
+.dropdown{position:absolute;top:calc(100% + 4px);left:-14px;right:-14px;background:white;border:1.5px solid var(--gold);border-radius:8px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(92,74,42,0.15);display:none}
+.dropdown.open{display:block}
+.dropdown-item{padding:10px 14px;cursor:pointer;font-size:0.88rem;border-bottom:1px solid var(--aged);display:flex;align-items:center;gap:10px;transition:background 0.12s}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item:hover{background:var(--gold-pale)}
+.item-dates{font-size:0.75rem;color:#999;margin-left:auto;white-space:nowrap}
+.dropdown-empty{padding:16px 14px;color:#aaa;font-size:0.85rem;text-align:center}
+.find-btn-wrap{text-align:center;margin:4px 0 28px}
+.find-btn{background:var(--gold);color:white;border:none;border-radius:8px;padding:14px 48px;font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:background 0.2s,opacity 0.2s}
+.find-btn:hover:not(:disabled){background:var(--gold-light)}
+.find-btn:disabled{opacity:0.4;cursor:not-allowed}
+.result-card{background:white;border:1px solid var(--mist);border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(92,74,42,0.08);display:none}
+.result-card.visible{display:block;animation:fadeIn 0.4s ease}
+.result-banner{background:linear-gradient(135deg,var(--branch) 0%,var(--branch-light) 100%);padding:28px 28px 24px;text-align:center;position:relative}
+.result-banner::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:20px;background:white;clip-path:ellipse(55% 100% at 50% 100%)}
+.result-relationship{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--gold-pale);margin-bottom:4px;line-height:1.2}
+.result-names{color:rgba(245,233,200,0.7);font-size:0.82rem;letter-spacing:0.04em}
+.result-body{padding:28px}
+.path-section h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--branch);margin-bottom:14px}
+.path-chain{display:flex;flex-direction:column}
+.path-node{display:flex;align-items:center;gap:12px}
+.path-dot{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.path-node-name{font-size:0.9rem;font-weight:500;color:var(--ink)}
+.path-node-rel{font-size:0.75rem;color:#999;margin-left:4px}
+.path-line{display:flex;gap:12px;height:24px}
+.path-line-wrap{width:10px;display:flex;justify-content:center}
+.path-line-inner{width:2px;background:var(--gold);opacity:0.35;flex:1}
+.result-meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--aged);display:flex;gap:20px;flex-wrap:wrap}
+.meta-item{font-size:0.8rem;color:#888}
+.meta-item strong{color:var(--branch);font-weight:600}
+.error-card{background:#fff5f5;border:1px solid #f5c6c6;border-radius:10px;padding:20px;text-align:center;display:none}
+.error-card.visible{display:block}
+.error-card p{color:var(--error);font-size:0.9rem}
+.refresh-row{text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--mist)}
+.refresh-btn{background:none;border:1.5px solid var(--mist);border-radius:8px;padding:8px 20px;font-family:'Inter',sans-serif;font-size:0.82rem;color:#999;cursor:pointer;transition:border-color 0.2s,color 0.2s;margin:4px}
+.refresh-btn:hover{border-color:var(--branch-light);color:var(--branch)}
+footer{margin-top:auto;padding:20px;text-align:center;font-size:0.75rem;color:#bbb}
 </style>
-
 </head>
 <body>
-
 <header>
-  <span class="header-ornament">🌳</span>
   <h1>Family Relationship Finder</h1>
-  <p>Powered by your Geni family tree</p>
-  <div class="divider-line"></div>
+  <p>Moses Family Tree &middot; Powered by Geni</p>
 </header>
-
 <main>
 
-  <!-- PHASE 1: Login -->
-  <div class="phase active" id="phase-login">
-    <div class="login-card">
-      <span class="tree-icon">🔐</span>
-      <h2>Connect Your Family Tree</h2>
-      <p>Sign in with your Geni account to load your family tree. This happens once — after that, you can share the finder with anyone in the family without them needing to log in.</p>
-      <button class="btn-geni" onclick="startGeniAuth()">
-        🌳 Connect with Geni
-      </button>
-      <div class="privacy-note">
-        🔒 Read-only access &nbsp;·&nbsp; Your data stays in this browser
+<!-- PHASE 1: Login -->
+<div class="phase active" id="phase-login">
+  <div class="card">
+    <h2>Connect Your Family Tree</h2>
+    <p>Follow these steps to load the Moses family tree:</p>
+    <ol>
+      <li>Click <strong>"Get Access Token"</strong> below</li>
+      <li>Log into Geni if prompted, then click <strong>Authorize</strong></li>
+      <li>On the next page, copy the <strong>access_token</strong> value from the URL bar</li>
+      <li>Paste it in the box below and click <strong>Load Tree</strong></li>
+    </ol>
+    <a class="btn" href="https://www.geni.com/platform/oauth/authorize?client_id=2080&redirect_uri=https%3A%2F%2Fappelrou.github.io%2Ffamily-tree%2F&response_type=token" target="_blank">Get Access Token</a>
+    <div class="token-row" style="margin-top:20px">
+      <input type="text" id="token-input" placeholder="Paste access_token here...">
+      <button class="btn btn-gold" onclick="useToken()">Load Tree</button>
+    </div>
+    <div class="privacy-note">Read-only access &middot; Your data stays in this browser</div>
+  </div>
+</div>
+
+<!-- PHASE 2: Loading -->
+<div class="phase" id="phase-loading">
+  <div class="card">
+    <span class="tree-loader">&#127795;</span>
+    <h2>Growing your family tree...</h2>
+    <p id="loading-subtitle" style="color:#888;font-size:0.88rem">Connecting to Geni</p>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="loading-status" id="loading-status">Authenticating...</div>
+    <div class="loading-count" id="loading-count"></div>
+  </div>
+</div>
+
+<!-- PHASE 3: Finder -->
+<div class="phase" id="phase-finder">
+  <div class="finder-header">
+    <h2>Find a Relationship</h2>
+    <span class="badge" id="tree-count-badge">0 people</span>
+  </div>
+
+  <div class="selector-row">
+    <div class="person-selector" id="selector-a">
+      <label>First Person</label>
+      <div class="search-wrap">
+        <div class="selected-person" id="selected-a">
+          <span id="avatar-a">?</span>
+          <span class="person-name-sel" id="name-a"></span>
+          <button class="clear-btn" onclick="clearPerson('a')">x</button>
+        </div>
+        <input type="text" id="search-a" placeholder="Search by name..." oninput="handleSearch(this,'a')" onfocus="openDropdown('a')" autocomplete="off">
+        <div class="dropdown" id="dropdown-a"></div>
+      </div>
+    </div>
+    <div class="connector-col">&harr;</div>
+    <div class="person-selector" id="selector-b">
+      <label>Second Person</label>
+      <div class="search-wrap">
+        <div class="selected-person" id="selected-b">
+          <span id="avatar-b">?</span>
+          <span class="person-name-sel" id="name-b"></span>
+          <button class="clear-btn" onclick="clearPerson('b')">x</button>
+        </div>
+        <input type="text" id="search-b" placeholder="Search by name..." oninput="handleSearch(this,'b')" onfocus="openDropdown('b')" autocomplete="off">
+        <div class="dropdown" id="dropdown-b"></div>
       </div>
     </div>
   </div>
 
-  <!-- PHASE 2: Loading tree -->
-  <div class="phase" id="phase-loading">
-    <div class="loading-card">
-      <span class="tree-loader">🌳</span>
-      <h2>Growing your family tree…</h2>
-      <p id="loading-subtitle" style="color:#888;font-size:0.88rem;margin-top:6px;">Connecting to Geni</p>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-      <div class="loading-status" id="loading-status">Authenticating…</div>
-      <div class="loading-count" id="loading-count"></div>
-      <div style="margin-top:24px;">
-        <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
-      </div>
-    </div>
-    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
+  <div class="find-btn-wrap">
+    <button class="find-btn" id="find-btn" onclick="findRelationship()" disabled>Find Relationship</button>
   </div>
 
-  <!-- PHASE 3: Relationship Finder -->
-  <div class="phase" id="phase-finder">
-    <div class="finder-header">
-      <h2>Find a Relationship</h2>
-      <span class="tree-count-badge" id="tree-count-badge">0 people</span>
-    </div>
+  <div class="error-card" id="error-card"><p id="error-msg"></p></div>
 
-    <div class="selector-row">
-      <!-- Person A -->
-      <div class="person-selector" id="selector-a">
-        <label>First Person</label>
-        <div class="search-input-wrap" style="position:relative">
-          <div class="selected-person" id="selected-a">
-            <div class="person-avatar" id="avatar-a">👤</div>
-            <span class="person-name-selected" id="name-a"></span>
-            <button class="clear-btn" onclick="clearPerson('a')" title="Clear">✕</button>
-          </div>
-          <input type="text" id="search-a" placeholder="Search by name…" oninput="handleSearch(this,'a')" onfocus="openDropdown('a')" autocomplete="off">
-          <div class="dropdown" id="dropdown-a"></div>
-        </div>
+  <div class="result-card" id="result-card">
+    <div class="result-banner">
+      <div class="result-relationship" id="result-relationship">--</div>
+      <div class="result-names" id="result-names"></div>
+    </div>
+    <div class="result-body">
+      <div class="path-section">
+        <h3>Connection Path</h3>
+        <div class="path-chain" id="path-chain"></div>
       </div>
-
-      <!-- Connector -->
-      <div class="connector-col">⟷</div>
-
-      <!-- Person B -->
-      <div class="person-selector" id="selector-b">
-        <label>Second Person</label>
-        <div class="search-input-wrap" style="position:relative">
-          <div class="selected-person" id="selected-b">
-            <div class="person-avatar" id="avatar-b">👤</div>
-            <span class="person-name-selected" id="name-b"></span>
-            <button class="clear-btn" onclick="clearPerson('b')" title="Clear">✕</button>
-          </div>
-          <input type="text" id="search-b" placeholder="Search by name…" oninput="handleSearch(this,'b')" onfocus="openDropdown('b')" autocomplete="off">
-          <div class="dropdown" id="dropdown-b"></div>
-        </div>
-      </div>
+      <div class="result-meta" id="result-meta"></div>
     </div>
-
-    <div class="find-btn-wrap">
-      <button class="find-btn" id="find-btn" onclick="findRelationship()" disabled>
-        Find Relationship
-      </button>
-    </div>
-
-    <!-- Error -->
-    <div class="error-card" id="error-card">
-      <p id="error-msg">Something went wrong.</p>
-    </div>
-
-    <!-- Result -->
-    <div class="result-card" id="result-card">
-      <div class="result-banner">
-        <div class="result-relationship" id="result-relationship">—</div>
-        <div class="result-names" id="result-names"></div>
-      </div>
-      <div class="result-body">
-        <div class="path-section">
-          <h3>🔗 Connection Path</h3>
-          <div class="path-chain" id="path-chain"></div>
-        </div>
-        <div class="result-meta" id="result-meta"></div>
-      </div>
-    </div>
-
-    <div class="refresh-row">
-      <button class="refresh-btn" onclick="refreshTree()">↻ Reload tree data</button>
-      &nbsp;
-      <button class="refresh-btn" onclick="debugTree()" style="color:#b8860b;border-color:#b8860b;">🔍 Debug: inspect raw API</button>
-    </div>
-    <pre id="debug-out" style="display:none;margin-top:16px;background:#1a1a1a;color:#7fff7f;padding:16px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></pre>
   </div>
+
+  <div class="refresh-row">
+    <button class="refresh-btn" onclick="refreshTree()">Reload tree data</button>
+    <button class="refresh-btn" onclick="showPhase('login')">Reconnect to Geni</button>
+  </div>
+</div>
 
 </main>
-
-<footer>Family Relationship Finder · Built with the Geni API · Data stays in your browser</footer>
-
+<footer>Family Relationship Finder &middot; Moses Family Tree &middot; Powered by Geni API</footer>
 
 <script>
+var CLIENT_ID = '2080';
+var REDIRECT_URI = 'https://appelrou.github.io/family-tree/';
+var GENI_API = 'https://www.geni.com/api';
 
-// ============================================================
-// CONFIG
-// ============================================================
-const CLIENT_ID = '2080';
-const REDIRECT_URI = 'https://appelrou.github.io/family-tree';
-const GENI_AUTH_URL = 'https://www.geni.com/platform/oauth/authorize';
-const GENI_API = 'https://www.geni.com/api';
+var accessToken = null;
+var treeData = {};
+var profileList = [];
+var selectedA = null;
+var selectedB = null;
 
-// ============================================================
-// STATE
-// ============================================================
-let accessToken = null;
-let treeData = {}; // profileId -> {id, name, gender, birth_year, parent_ids, child_ids, partner_ids, union_ids}
-let profileList = []; // sorted array for search
-let selectedA = null;
-let selectedB = null;
-
-// ============================================================
-// BOOT — check for token in URL hash (OAuth callback)
-// ============================================================
-(function boot() {
-  const hash = parseHash();
-  if (hash.access_token) {
-    accessToken = hash.access_token;
-    // Clean URL
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-    showPhase('loading');
-    loadEntireTree();
-  } else if (localStorage.getItem('geni_tree')) {
-    // Restore cached tree
+// On page load - check for cached tree
+window.addEventListener('load', function() {
+  var savedToken = localStorage.getItem('geni_token');
+  var savedTree = localStorage.getItem('geni_tree');
+  if (savedToken && savedTree) {
     try {
-      const cached = JSON.parse(localStorage.getItem('geni_tree'));
-      if (cached && Object.keys(cached).length > 10) {
-        treeData = cached;
+      var parsed = JSON.parse(savedTree);
+      if (parsed && Object.keys(parsed).length > 5) {
+        accessToken = savedToken;
+        treeData = parsed;
         buildProfileList();
         showPhase('finder');
         return;
       }
     } catch(e) {}
-    showPhase('login');
-  } else {
-    showPhase('login');
   }
-})();
+  showPhase('login');
+});
 
-function parseHash() {
-  // Geni may return token as query param (?) or hash (#)
-  const hash = window.location.hash.substring(1);
-  const search = window.location.search.substring(1);
-  const raw = hash || search;
-  const params = {};
-  raw.split('&').forEach(p => {
-    const [k, v] = p.split('=');
-    if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+function useToken() {
+  var input = document.getElementById('token-input');
+  var token = input ? input.value.trim() : '';
+  if (!token) { alert('Please paste your access token first.'); return; }
+  accessToken = token;
+  localStorage.setItem('geni_token', token);
+  treeData = {};
+  showPhase('loading');
+  loadEntireTree();
+}
+
+function geniGet(path) {
+  return new Promise(function(resolve, reject) {
+    var cbName = 'geni_cb_' + Math.random().toString(36).substring(2);
+    var sep = path.indexOf('?') >= 0 ? '&' : '?';
+    var url = GENI_API + path + sep + 'access_token=' + encodeURIComponent(accessToken) + '&callback=' + cbName;
+    var script = document.createElement('script');
+    var timeout = setTimeout(function() {
+      cleanup();
+      reject(new Error('Request timed out'));
+    }, 15000);
+    window[cbName] = function(data) {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error.message || JSON.stringify(data.error)));
+      else resolve(data);
+    };
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    script.onerror = function() { cleanup(); reject(new Error('Script load failed')); };
+    script.src = url;
+    document.head.appendChild(script);
   });
-  return params;
 }
 
-// ============================================================
-// AUTH
-// ============================================================
-function startGeniAuth() {
-  const url = `${GENI_AUTH_URL}?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token`;
-  window.location.href = url;
-}
-
-// ============================================================
-// TREE LOADING
-// ============================================================
 async function loadEntireTree() {
-  setProgress(5, 'Getting your profile…');
-
+  setProgress(5, 'Getting your profile...');
   try {
-    // Step 1: Get current user profile
-    const me = await geniGet('/profile');
-    // Geni returns full URL as id e.g. "https://www.geni.com/api/profile-12345"
-    const myId = me.id;
+    var me = await geniGet('/profile');
+    var myId = me.id;
     treeData[myId] = normalizeProfile(me);
-    setProgress(10, `Found you: ${me.name}`);
+    setProgress(10, 'Found you: ' + me.name);
 
-    // Step 2: BFS outward using immediate-family
-    const visited = new Set([myId]);
-    const queue = [myId];
+    var visited = new Set([myId]);
+    var queue = [myId];
 
     while (queue.length > 0) {
-      const id = queue.shift();
+      var id = queue.shift();
       await expandProfile(id, visited, queue);
-
-      const total = visited.size;
-      const pct = Math.min(90, 10 + (total / 3));
-      setProgress(pct, `Mapping the family tree…`, `${total} family members found`);
-
-      // Wait 1.2s between requests to respect Geni rate limits
+      var total = visited.size;
+      var pct = Math.min(90, 10 + (total / 3));
+      setProgress(pct, 'Mapping the family tree...', total + ' family members found');
       await sleep(1200);
-
-      // Safety cap
       if (visited.size > 600) break;
     }
 
-    setProgress(95, 'Organizing names…');
+    setProgress(95, 'Organizing names...');
     buildProfileList();
     setProgress(100, 'Ready!');
-
     localStorage.setItem('geni_tree', JSON.stringify(treeData));
     await sleep(600);
     showPhase('finder');
-
   } catch(err) {
-    setProgress(0, 'Error: ' + err.message);
-    document.getElementById('loading-subtitle').textContent = 'Error: ' + err.message + ' — try reconnecting.';
+    document.getElementById('loading-status').textContent = 'Error: ' + err.message;
+    document.getElementById('loading-subtitle').textContent = 'Please reconnect to Geni.';
     console.error(err);
   }
 }
 
 async function expandProfile(profileId, visited, queue) {
   try {
-    // Geni profile IDs are full URLs like https://www.geni.com/api/profile-12345
-    // Extract just the numeric portion for the API path
-    const numId = numericId(profileId);
-    const data = await geniGet(`/profile-${numId}/immediate-family`);
+    var numId = numericId(profileId);
+    var data = await geniGet('/profile-' + numId + '/immediate-family');
+    var nodes = data.nodes || {};
 
-    // immediate-family returns: { nodes: { "profile-X": {...}, "union-X": {...} }, focus: {...} }
-    const nodes = data.nodes || {};
-
-    for (const [nid, node] of Object.entries(nodes)) {
-      // Skip union nodes, only process profiles
-      if (nid.startsWith('union-')) continue;
-
-      // Build a full ID to match what /profile returns
-      const fullId = node.id || `https://www.geni.com/api/${nid}`;
-
+    // Add new profiles to tree
+    for (var nid in nodes) {
+      var node = nodes[nid];
+      if (nid.indexOf('union-') === 0) continue;
+      var fullId = node.id || ('https://www.geni.com/api/' + nid);
       if (!visited.has(fullId) && !visited.has(nid)) {
         visited.add(fullId);
         visited.add(nid);
-        const normalized = normalizeProfile(node);
-        treeData[fullId] = normalized;
+        treeData[fullId] = normalizeProfile(node);
         queue.push(fullId);
       }
     }
 
-    // Build edges using Geni's union/edges model:
-    // - Each union has an "edges" object: { "profile-X": { "rel": "partner"|"child" }, ... }
-    // - Each profile has an "edges" object: { "union-X": { "rel": "partner"|"child" }, ... }
-    // To find focus's parents: find unions where focus rel=child, then get partner members
-    // To find focus's children: find unions where focus rel=partner, then get child members
-    // To find focus's partners: find unions where focus rel=partner, then get other partner members
+    // Build edges using Geni's union/edges model
+    var focusNumId = numericId(profileId);
+    var focusKey = 'profile-' + focusNumId;
+    var focusNode = nodes[focusKey] || {};
+    var focusEdges = focusNode.edges || {};
 
-    const focusNode = data.focus || {};
-    const focusId = focusNode.id || profileId;
-    const target = treeData[focusId] || treeData[profileId];
+    var target = treeData[profileId];
+    if (!target) {
+      for (var key in treeData) {
+        if (numericId(key) === focusNumId) { target = treeData[key]; break; }
+      }
+    }
 
     if (target) {
-      const parentIds = new Set();
-      const childIds = new Set();
-      const partnerIds = new Set();
+      var parentIds = [];
+      var childIds = [];
+      var partnerIds = [];
 
-      // Get focus profile's edges from the nodes map (more reliable than data.focus)
-      const focusNumId = numericId(focusId);
-      const focusKey = `profile-${focusNumId}`;
-      const focusProfileNode = nodes[focusKey] || focusNode;
-      const focusEdges = focusProfileNode.edges || {};
-
-      // focusEdges: { "union-X": { "rel": "partner" }, "union-Y": { "rel": "child" } }
-      for (const [unionKey, edgeInfo] of Object.entries(focusEdges)) {
-        if (!unionKey.startsWith('union-')) continue;
-        const focusRel = edgeInfo.rel;
-        const unionNode = nodes[unionKey];
+      for (var unionKey in focusEdges) {
+        if (unionKey.indexOf('union-') !== 0) continue;
+        var focusRel = focusEdges[unionKey].rel;
+        var unionNode = nodes[unionKey];
         if (!unionNode) continue;
+        var unionEdges = unionNode.edges || {};
 
-        const unionEdges = unionNode.edges || {};
-        // unionEdges: { "profile-X": { "rel": "partner" }, "profile-Y": { "rel": "child" } }
-
-        for (const [profileKey, profileEdge] of Object.entries(unionEdges)) {
-          if (!profileKey.startsWith('profile-')) continue;
-          const memberNode = nodes[profileKey];
+        for (var profileKey in unionEdges) {
+          if (profileKey.indexOf('profile-') !== 0) continue;
+          var memberNode = nodes[profileKey];
           if (!memberNode) continue;
-          const memberId = memberNode.id || `https://www.geni.com/api/${profileKey}`;
-          const memberNum = numericId(memberId);
-          if (memberNum === focusNumId) continue; // skip self
+          var memberId = memberNode.id || ('https://www.geni.com/api/' + profileKey);
+          if (numericId(memberId) === focusNumId) continue;
+          var memberRel = unionEdges[profileKey].rel;
 
-          const memberRel = profileEdge.rel;
-
-          if (focusRel === 'child') {
-            // Focus is a child of this union → union members who are partners = focus's parents
-            if (memberRel === 'partner') parentIds.add(memberId);
-          } else if (focusRel === 'partner') {
-            // Focus is a partner in this union → other partners = spouses, children = focus's children
-            if (memberRel === 'partner') partnerIds.add(memberId);
-            if (memberRel === 'child') childIds.add(memberId);
+          if (focusRel === 'child' && memberRel === 'partner') {
+            parentIds.push(memberId);
+          } else if (focusRel === 'partner' && memberRel === 'partner') {
+            partnerIds.push(memberId);
+          } else if (focusRel === 'partner' && memberRel === 'child') {
+            childIds.push(memberId);
           }
         }
       }
 
-      target.parent_ids = [...parentIds];
-      target.child_ids = [...childIds];
-      target.partner_ids = [...partnerIds];
+      target.parent_ids = parentIds;
+      target.child_ids = childIds;
+      target.partner_ids = partnerIds;
     }
-
   } catch(e) {
-    if (e.message && e.message.toLowerCase().includes('rate')) {
-      // Rate limited — put back in queue and wait longer
-      console.warn('Rate limited, will retry', profileId);
+    if (e.message && e.message.toLowerCase().indexOf('rate') >= 0) {
       queue.push(profileId);
       await sleep(5000);
     } else {
@@ -882,148 +370,61 @@ async function expandProfile(profileId, visited, queue) {
 }
 
 function normalizeProfile(p) {
-  const birth = p.birth || {};
-  const byear = birth.date ? (birth.date.year || null) : null;
-  const death = p.death || {};
-  const dyear = death.date ? (death.date.year || null) : null;
-
-  return {
-    id: p.id,
-    name: p.name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unknown',
-    gender: p.gender || 'unknown',
-    birth_year: byear,
-    death_year: dyear,
-    parent_ids: [],
-    child_ids: [],
-    partner_ids: []
-  };
+  var birth = p.birth || {};
+  var byear = birth.date ? (birth.date.year || null) : null;
+  var death = p.death || {};
+  var dyear = death.date ? (death.date.year || null) : null;
+  var name = p.name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Unknown';
+  return { id: p.id, name: name, gender: p.gender || 'unknown', birth_year: byear, death_year: dyear, parent_ids: [], child_ids: [], partner_ids: [] };
 }
 
 function numericId(id) {
-  // Handles both "https://www.geni.com/api/profile-12345" and "profile-12345"
   if (!id) return id;
-  const str = String(id);
-  const match = str.match(/profile-([0-9]+)/);
+  var str = String(id);
+  var match = str.match(/profile-([0-9]+)/);
   return match ? match[1] : str.replace('profile-', '');
-}
-
-function resolveId(rawId, nodes) {
-  // Given a raw ID from a union node, find the matching full ID in treeData
-  if (!rawId) return null;
-  const str = String(rawId);
-  // Try direct match in treeData
-  if (treeData[str]) return str;
-  // Try as profile-N key in nodes
-  const shortKey = str.replace(/.*\//, '').replace(/.*api\//, '');
-  if (nodes[shortKey] && nodes[shortKey].id) return nodes[shortKey].id;
-  // Try finding by numeric ID in treeData
-  const num = numericId(str);
-  for (const key of Object.keys(treeData)) {
-    if (numericId(key) === num) return key;
-  }
-  return str;
 }
 
 function buildProfileList() {
   profileList = Object.values(treeData)
-    .filter(p => p.name && p.name !== 'Unknown')
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const badge = document.getElementById('tree-count-badge');
-  if (badge) badge.textContent = `${profileList.length} people`;
+    .filter(function(p) { return p.name && p.name !== 'Unknown'; })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); });
+  var badge = document.getElementById('tree-count-badge');
+  if (badge) badge.textContent = profileList.length + ' people';
 }
 
-// ============================================================
-// GENI API HELPER — uses JSONP to avoid CORS issues
-// ============================================================
-function geniGet(path) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'geni_cb_' + Math.random().toString(36).substring(2);
-    const sep = path.includes('?') ? '&' : '?';
-    const url = `${GENI_API}${path}${sep}access_token=${encodeURIComponent(accessToken)}&callback=${cbName}`;
-
-    const script = document.createElement('script');
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Request timed out'));
-    }, 15000);
-
-    window[cbName] = (data) => {
-      cleanup();
-      if (data && data.error) reject(new Error(data.error.message || JSON.stringify(data.error)));
-      else resolve(data);
-    };
-
-    function cleanup() {
-      clearTimeout(timeout);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    script.onerror = () => { cleanup(); reject(new Error('Script load failed')); };
-    script.src = url;
-    document.head.appendChild(script);
-  });
-}
-
-// ============================================================
-// SEARCH & SELECTION
-// ============================================================
 function handleSearch(input, side) {
-  const q = input.value.toLowerCase().trim();
-  const dropdown = document.getElementById(`dropdown-${side}`);
-
-  if (!q) {
-    dropdown.innerHTML = '';
-    dropdown.classList.remove('open');
-    return;
-  }
-
-  const matches = profileList
-    .filter(p => p.name.toLowerCase().includes(q))
-    .slice(0, 12);
-
+  var q = input.value.toLowerCase().trim();
+  var dropdown = document.getElementById('dropdown-' + side);
+  if (!q) { dropdown.innerHTML = ''; dropdown.classList.remove('open'); return; }
+  var matches = profileList.filter(function(p) { return p.name.toLowerCase().indexOf(q) >= 0; }).slice(0, 12);
   if (matches.length === 0) {
     dropdown.innerHTML = '<div class="dropdown-empty">No matches found</div>';
   } else {
-    dropdown.innerHTML = matches.map(p => {
-      const dates = formatDates(p);
-      return `<div class="dropdown-item" onclick="selectPerson('${side}','${p.id}')">
-        <span>${genderIcon(p.gender)}</span>
-        <span>${escHtml(p.name)}</span>
-        ${dates ? `<span class="item-dates">${dates}</span>` : ''}
-      </div>`;
+    dropdown.innerHTML = matches.map(function(p) {
+      var dates = formatDates(p);
+      return '<div class="dropdown-item" onclick="selectPerson(\'' + side + '\',\'' + p.id + '\')">' +
+        '<span>' + escHtml(p.name) + '</span>' +
+        (dates ? '<span class="item-dates">' + dates + '</span>' : '') + '</div>';
     }).join('');
   }
   dropdown.classList.add('open');
 }
 
 function openDropdown(side) {
-  // Do nothing on focus unless there's text
-  const input = document.getElementById(`search-${side}`);
-  if (input.value.trim()) handleSearch(input, side);
+  var input = document.getElementById('search-' + side);
+  if (input && input.value.trim()) handleSearch(input, side);
 }
 
 function selectPerson(side, profileId) {
-  const profile = treeData[profileId];
+  var profile = treeData[profileId];
   if (!profile) return;
-
   if (side === 'a') selectedA = profile;
   else selectedB = profile;
-
-  // Show selected
-  document.getElementById(`selected-${side}`).classList.add('visible');
-  document.getElementById(`name-${side}`).textContent = profile.name;
-  document.getElementById(`avatar-${side}`).textContent = genderIcon(profile.gender);
-
-  // Hide search input
-  document.getElementById(`search-${side}`).style.display = 'none';
-
-  // Close dropdown
-  const dropdown = document.getElementById(`dropdown-${side}`);
-  dropdown.classList.remove('open');
-  dropdown.innerHTML = '';
-
+  document.getElementById('selected-' + side).classList.add('visible');
+  document.getElementById('name-' + side).textContent = profile.name;
+  document.getElementById('search-' + side).style.display = 'none';
+  document.getElementById('dropdown-' + side).classList.remove('open');
   updateFindButton();
   hideResults();
 }
@@ -1031,132 +432,109 @@ function selectPerson(side, profileId) {
 function clearPerson(side) {
   if (side === 'a') selectedA = null;
   else selectedB = null;
-
-  document.getElementById(`selected-${side}`).classList.remove('visible');
-  document.getElementById(`search-${side}`).style.display = '';
-  document.getElementById(`search-${side}`).value = '';
-  document.getElementById(`search-${side}`).focus();
-
+  document.getElementById('selected-' + side).classList.remove('visible');
+  document.getElementById('search-' + side).style.display = '';
+  document.getElementById('search-' + side).value = '';
   updateFindButton();
   hideResults();
 }
 
-function updateFindButton() {
-  const btn = document.getElementById('find-btn');
-  if (btn) btn.disabled = !(selectedA && selectedB && selectedA.id !== selectedB.id);
-}
-
-// Close dropdowns on outside click
-document.addEventListener('click', e => {
-  ['a','b'].forEach(side => {
-    const sel = document.getElementById(`selector-${side}`);
+document.addEventListener('click', function(e) {
+  ['a','b'].forEach(function(side) {
+    var sel = document.getElementById('selector-' + side);
     if (sel && !sel.contains(e.target)) {
-      document.getElementById(`dropdown-${side}`).classList.remove('open');
+      document.getElementById('dropdown-' + side).classList.remove('open');
     }
   });
 });
 
-// ============================================================
-// RELATIONSHIP FINDING (BFS on local graph)
-// ============================================================
-async function findRelationship() {
-  if (!selectedA || !selectedB) return;
+function updateFindButton() {
+  var btn = document.getElementById('find-btn');
+  if (btn) btn.disabled = !(selectedA && selectedB && selectedA.id !== selectedB.id);
+}
 
+function findRelationship() {
+  if (!selectedA || !selectedB) return;
   hideResults();
   document.getElementById('find-btn').disabled = true;
-  document.getElementById('find-btn').textContent = 'Calculating…';
-
+  document.getElementById('find-btn').textContent = 'Calculating...';
   try {
-    const result = computeRelationship(selectedA.id, selectedB.id);
+    var result = computeRelationship(selectedA.id, selectedB.id);
     displayResult(result);
   } catch(e) {
     showError('Could not determine relationship: ' + e.message);
-  } finally {
-    document.getElementById('find-btn').disabled = false;
-    document.getElementById('find-btn').textContent = 'Find Relationship';
-    updateFindButton();
   }
+  document.getElementById('find-btn').disabled = false;
+  document.getElementById('find-btn').textContent = 'Find Relationship';
+  updateFindButton();
 }
 
 function computeRelationship(idA, idB) {
-  if (idA === idB) return { label: 'Same person', path: [idA], type: 'same' };
+  if (idA === idB) return { label: 'Same person', path: [idA] };
 
-  // BFS from A to B through parent/child/partner edges
-  // We'll find lowest common ancestor first for cousin-type relationships
-  // Then check direct lineage
-
-  // Build adjacency: for each profile, gather all connected ids with edge type
   function getEdges(id) {
-    const p = treeData[id];
+    var p = treeData[id];
     if (!p) return [];
-    const edges = [];
-    (p.parent_ids || []).forEach(pid => edges.push({ id: pid, rel: 'parent' }));
-    (p.child_ids || []).forEach(cid => edges.push({ id: cid, rel: 'child' }));
-    (p.partner_ids || []).forEach(sid => edges.push({ id: sid, rel: 'partner' }));
+    var edges = [];
+    (p.parent_ids || []).forEach(function(pid) { edges.push({ id: pid, rel: 'parent' }); });
+    (p.child_ids || []).forEach(function(cid) { edges.push({ id: cid, rel: 'child' }); });
+    (p.partner_ids || []).forEach(function(sid) { edges.push({ id: sid, rel: 'partner' }); });
     return edges;
   }
 
-  // BFS path finding
   function bfsPath(startId, endId) {
-    const visited = new Map(); // id -> {from, rel}
-    const queue = [startId];
+    var visited = new Map();
+    var queue = [startId];
     visited.set(startId, null);
-
     while (queue.length > 0) {
-      const curr = queue.shift();
+      var curr = queue.shift();
       if (curr === endId) {
-        // Reconstruct path
-        const path = [];
-        let node = endId;
+        var path = [];
+        var node = endId;
         while (node !== null) {
           path.unshift(node);
-          const prev = visited.get(node);
+          var prev = visited.get(node);
           node = prev ? prev.from : null;
         }
         return path;
       }
-      for (const edge of getEdges(curr)) {
+      getEdges(curr).forEach(function(edge) {
         if (!visited.has(edge.id) && treeData[edge.id]) {
           visited.set(edge.id, { from: curr, rel: edge.rel });
           queue.push(edge.id);
         }
-      }
+      });
     }
-    return null; // no path
+    return null;
   }
 
-  // Ancestors of a node (id -> generation distance)
   function getAncestors(id) {
-    const ancestors = new Map();
-    const queue = [{ id, gen: 0 }];
-    const seen = new Set();
+    var ancestors = new Map();
+    var queue = [{ id: id, gen: 0 }];
+    var seen = new Set();
     while (queue.length > 0) {
-      const { id: cid, gen } = queue.shift();
-      if (seen.has(cid)) continue;
-      seen.add(cid);
-      ancestors.set(cid, gen);
-      const p = treeData[cid];
+      var item = queue.shift();
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      ancestors.set(item.id, item.gen);
+      var p = treeData[item.id];
       if (p) {
-        (p.parent_ids || []).forEach(pid => {
-          if (treeData[pid]) queue.push({ id: pid, gen: gen + 1 });
+        (p.parent_ids || []).forEach(function(pid) {
+          if (treeData[pid]) queue.push({ id: pid, gen: item.gen + 1 });
         });
       }
     }
     return ancestors;
   }
 
-  const ancestorsA = getAncestors(idA);
-  const ancestorsB = getAncestors(idB);
+  var ancestorsA = getAncestors(idA);
+  var ancestorsB = getAncestors(idB);
+  var bestLCA = null, bestDist = Infinity, genA_best = 0, genB_best = 0;
 
-  // Find LCA (lowest common ancestor = minimum total generations)
-  let bestLCA = null;
-  let bestDist = Infinity;
-  let genA_best = 0, genB_best = 0;
-
-  for (const [aid, genA] of ancestorsA.entries()) {
+  ancestorsA.forEach(function(genA, aid) {
     if (ancestorsB.has(aid)) {
-      const genB = ancestorsB.get(aid);
-      const total = genA + genB;
+      var genB = ancestorsB.get(aid);
+      var total = genA + genB;
       if (total < bestDist) {
         bestDist = total;
         bestLCA = aid;
@@ -1164,61 +542,26 @@ function computeRelationship(idA, idB) {
         genB_best = genB;
       }
     }
-  }
+  });
 
-  // Build the connection path for display
-  const rawPath = bfsPath(idA, idB);
-
-  // Determine relationship label
-  let label = 'Related';
+  var rawPath = bfsPath(idA, idB);
+  var label = 'No connection found in tree';
 
   if (bestLCA) {
-    const upA = genA_best;
-    const upB = genB_best;
-
-    if (upA === 0 && upB === 0) {
-      label = 'Same person';
-    } else if (upA === 0) {
-      // A is ancestor of B
-      label = descendantLabel(upB);
-    } else if (upB === 0) {
-      // B is ancestor of A
-      label = descendantLabel(upA) + ' (of ' + (treeData[idA]?.name?.split(' ')[0] || 'yours') + ')';
-      // Actually flip: B is ancestor of A means A is B's descendant
-      // Label from A's perspective: B is A's [ancestor]
-      label = ancestorLabel(upA);
-    } else if (upA === 1 && upB === 1) {
-      label = 'Siblings';
-    } else if (upA === 1 && upB > 1) {
-      label = nthLabel(upB - 1) + ' Aunt/Uncle';
-    } else if (upB === 1 && upA > 1) {
-      label = nthLabel(upA - 1) + ' Niece/Nephew';
-    } else {
-      // Cousin relationship
-      const cousinDeg = Math.min(upA, upB) - 1;
-      const removed = Math.abs(upA - upB);
-      label = cousinLabel(cousinDeg, removed);
-    }
+    var upA = genA_best, upB = genB_best;
+    if (upA === 0 && upB === 0) label = 'Same person';
+    else if (upA === 0) label = descendantLabel(upB);
+    else if (upB === 0) label = ancestorLabel(upA);
+    else if (upA === 1 && upB === 1) label = 'Siblings';
+    else if (upA === 1 && upB > 1) label = nthLabel(upB - 1) + 'Aunt or Uncle';
+    else if (upB === 1 && upA > 1) label = nthLabel(upA - 1) + 'Niece or Nephew';
+    else label = cousinLabel(Math.min(upA, upB) - 1, Math.abs(upA - upB));
   } else {
-    // Check if they're partners
-    const pA = treeData[idA];
-    if (pA && (pA.partner_ids || []).includes(idB)) {
-      label = 'Spouses / Partners';
-    } else if (rawPath) {
-      label = 'Related (path length ' + (rawPath.length - 1) + ')';
-    } else {
-      label = 'No connection found in tree';
-    }
+    var pA = treeData[idA];
+    if (pA && (pA.partner_ids || []).indexOf(idB) >= 0) label = 'Spouses / Partners';
   }
 
-  return {
-    label,
-    path: rawPath || [idA, idB],
-    genA: genA_best,
-    genB: genB_best,
-    lca: bestLCA,
-    distance: rawPath ? rawPath.length - 1 : null
-  };
+  return { label: label, path: rawPath || [idA, idB], genA: genA_best, genB: genB_best, lca: bestLCA, distance: rawPath ? rawPath.length - 1 : null };
 }
 
 function ancestorLabel(gen) {
@@ -1227,183 +570,110 @@ function ancestorLabel(gen) {
   if (gen === 3) return 'Great-Grandparent';
   return 'Great-'.repeat(gen - 2) + 'Grandparent';
 }
-
 function descendantLabel(gen) {
   if (gen === 1) return 'Child';
   if (gen === 2) return 'Grandchild';
   if (gen === 3) return 'Great-Grandchild';
   return 'Great-'.repeat(gen - 2) + 'Grandchild';
 }
-
 function nthLabel(n) {
   if (n === 1) return '';
   if (n === 2) return 'Grand';
   return 'Great-'.repeat(n - 2) + 'Grand';
 }
-
 function cousinLabel(degree, removed) {
-  const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
-  const ord = ordinals[degree] || `${degree}th`;
-  if (removed === 0) return `${ord} Cousin`;
-  return `${ord} Cousin ${removed}× Removed`;
+  var ords = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+  var ord = ords[degree] || (degree + 'th');
+  if (removed === 0) return ord + ' Cousin';
+  return ord + ' Cousin ' + removed + 'x Removed';
 }
 
-// ============================================================
-// DISPLAY RESULT
-// ============================================================
 function displayResult(result) {
-  const card = document.getElementById('result-card');
-  const nameA = selectedA?.name || 'Person A';
-  const nameB = selectedB?.name || 'Person B';
-
+  var nameA = selectedA ? selectedA.name : 'Person A';
+  var nameB = selectedB ? selectedB.name : 'Person B';
   document.getElementById('result-relationship').textContent = result.label;
-  document.getElementById('result-names').textContent = `${nameA}  ↔  ${nameB}`;
+  document.getElementById('result-names').textContent = nameA + '  <->  ' + nameB;
 
-  // Build path chain
-  const chainEl = document.getElementById('path-chain');
+  var chainEl = document.getElementById('path-chain');
   chainEl.innerHTML = '';
-
   if (result.path && result.path.length > 0) {
-    const maxDisplay = 10;
-    const pathToShow = result.path.length > maxDisplay
-      ? [...result.path.slice(0, 4), null, ...result.path.slice(-4)]
-      : result.path;
-
-    pathToShow.forEach((id, i) => {
+    var pathToShow = result.path.length > 10 ? result.path.slice(0, 4).concat([null]).concat(result.path.slice(-4)) : result.path;
+    pathToShow.forEach(function(id, i) {
       if (id === null) {
-        // Ellipsis
-        const el = document.createElement('div');
-        el.className = 'path-connector';
-        el.innerHTML = `<div class="path-connector-line-wrap"><div class="path-connector-line"></div></div><div class="path-connector-label">… ${result.path.length - 8} more people …</div>`;
+        var el = document.createElement('div');
+        el.className = 'path-line';
+        el.innerHTML = '<div class="path-line-wrap"><div class="path-line-inner"></div></div><div style="font-size:0.72rem;color:#bbb;align-self:center">... more people ...</div>';
         chainEl.appendChild(el);
         return;
       }
-
-      const profile = treeData[id];
-      const name = profile?.name || id;
-      const isFirst = i === 0 || (i === 1 && pathToShow[0] === null);
-      const isLast = i === pathToShow.length - 1;
-
-      const node = document.createElement('div');
+      var profile = treeData[id];
+      var name = profile ? profile.name : id;
+      var isFirst = i === 0;
+      var isLast = i === pathToShow.length - 1;
+      var node = document.createElement('div');
       node.className = 'path-node';
-      node.innerHTML = `
-        <div class="path-node-dot" style="${isFirst ? 'background:var(--green)' : isLast ? 'background:var(--gold-light)' : ''}"></div>
-        <div>
-          <span class="path-node-name">${escHtml(name)}</span>
-          ${isFirst ? '<span class="path-node-rel">(Person 1)</span>' : isLast ? '<span class="path-node-rel">(Person 2)</span>' : ''}
-        </div>
-      `;
+      node.innerHTML = '<div class="path-dot" style="' + (isFirst ? 'background:var(--green)' : isLast ? 'background:var(--gold-light)' : '') + '"></div>' +
+        '<div><span class="path-node-name">' + escHtml(name) + '</span>' +
+        (isFirst ? '<span class="path-node-rel">(Person 1)</span>' : isLast ? '<span class="path-node-rel">(Person 2)</span>' : '') + '</div>';
       chainEl.appendChild(node);
-
-      // Add connector if not last
       if (i < pathToShow.length - 1 && pathToShow[i + 1] !== null) {
-        const conn = document.createElement('div');
-        conn.className = 'path-connector';
-        conn.innerHTML = `<div class="path-connector-line-wrap"><div class="path-connector-line"></div></div>`;
+        var conn = document.createElement('div');
+        conn.className = 'path-line';
+        conn.innerHTML = '<div class="path-line-wrap"><div class="path-line-inner"></div></div>';
         chainEl.appendChild(conn);
       }
     });
   }
 
-  // Meta
-  const meta = document.getElementById('result-meta');
-  const parts = [];
-  if (result.distance !== null) parts.push(`<span class="meta-item"><strong>${result.distance}</strong> steps apart</span>`);
-  if (result.lca && treeData[result.lca]) parts.push(`<span class="meta-item">Common ancestor: <strong>${escHtml(treeData[result.lca].name)}</strong></span>`);
+  var meta = document.getElementById('result-meta');
+  var parts = [];
+  if (result.distance !== null) parts.push('<span class="meta-item"><strong>' + result.distance + '</strong> steps apart</span>');
+  if (result.lca && treeData[result.lca]) parts.push('<span class="meta-item">Common ancestor: <strong>' + escHtml(treeData[result.lca].name) + '</strong></span>');
   meta.innerHTML = parts.join('');
 
-  card.classList.add('visible');
-  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('result-card').classList.add('visible');
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function hideResults() {
   document.getElementById('result-card').classList.remove('visible');
   document.getElementById('error-card').classList.remove('visible');
 }
-
 function showError(msg) {
-  const el = document.getElementById('error-card');
   document.getElementById('error-msg').textContent = msg;
-  el.classList.add('visible');
+  document.getElementById('error-card').classList.add('visible');
 }
-
-// ============================================================
-// REFRESH
-// ============================================================
-async function debugTree() {
-  const out = document.getElementById('debug-out');
-  out.style.display = 'block';
-  out.textContent = 'Fetching raw immediate-family for your profile…
-';
-
-  try {
-    // Get current user id
-    const me = await geniGet('/profile');
-    const myId = me.id;
-    const num = numericId(myId);
-    out.textContent += `Your profile ID: ${myId}\nNumeric: ${num}\n\n`;
-
-    // Fetch immediate family raw
-    const data = await geniGet(`/profile-${num}/immediate-family`);
-    out.textContent += 'RAW immediate-family response:\n';
-    out.textContent += JSON.stringify(data, null, 2);
-  } catch(e) {
-    out.textContent += 'ERROR: ' + e.message;
-  }
-}
-
 function refreshTree() {
   localStorage.removeItem('geni_tree');
-  if (accessToken) {
-    showPhase('loading');
-    treeData = {};
-    profileList = [];
-    selectedA = null;
-    selectedB = null;
-    loadEntireTree();
-  } else {
-    showPhase('login');
-  }
+  treeData = {};
+  profileList = [];
+  selectedA = null;
+  selectedB = null;
+  showPhase('login');
 }
-
-// ============================================================
-// UI HELPERS
-// ============================================================
 function showPhase(name) {
-  ['login','loading','finder'].forEach(p => {
-    const el = document.getElementById(`phase-${p}`);
+  ['login','loading','finder'].forEach(function(p) {
+    var el = document.getElementById('phase-' + p);
     if (el) el.classList.toggle('active', p === name);
   });
 }
-
 function setProgress(pct, status, count) {
-  const bar = document.getElementById('progress-bar');
-  const statusEl = document.getElementById('loading-status');
-  const countEl = document.getElementById('loading-count');
+  var bar = document.getElementById('progress-bar');
+  var statusEl = document.getElementById('loading-status');
+  var countEl = document.getElementById('loading-count');
   if (bar) bar.style.width = pct + '%';
   if (statusEl && status) statusEl.textContent = status;
   if (countEl && count) countEl.textContent = count;
 }
-
-function genderIcon(gender) {
-  if (gender === 'male') return '👨';
-  if (gender === 'female') return '👩';
-  return '👤';
-}
-
 function formatDates(p) {
   if (!p.birth_year && !p.death_year) return '';
-  const b = p.birth_year || '?';
-  if (p.death_year) return `${b}–${p.death_year}`;
-  return `b. ${b}`;
+  var b = p.birth_year || '?';
+  return p.death_year ? (b + '-' + p.death_year) : ('b. ' + b);
 }
-
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 </script>
 </body>
 </html>
