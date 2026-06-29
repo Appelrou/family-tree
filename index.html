@@ -78,29 +78,37 @@ main{width:100%;max-width:680px;padding:32px 20px 60px}
 .path-line-wrap{width:10px;display:flex;justify-content:center}
 .path-line-inner{width:2px;background:var(--gold);opacity:0.35;flex:1}
 .result-meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--aged);display:flex;gap:20px;flex-wrap:wrap}
-.tree-viz{padding:8px 0;font-family:'Inter',sans-serif}
-.tviz-row{position:relative;margin-bottom:2px}
-.tviz-node{display:inline-flex;flex-direction:column;padding:8px 14px;border-radius:8px;border:1.5px solid var(--mist);background:white;min-width:160px;max-width:260px;position:relative}
+.tree-viz{padding:12px 0;font-family:'Inter',sans-serif}
+.tviz-node{display:flex;flex-direction:column;padding:8px 12px;border-radius:8px;border:1.5px solid var(--mist);background:white;width:100%}
 .tviz-node-a{border-color:var(--green);background:#f0f7f3}
 .tviz-node-b{border-color:var(--gold);background:var(--gold-pale)}
 .tviz-node-lca{border-color:var(--branch);background:var(--aged)}
-.tviz-node-mid{border-color:#ccc;background:#fafafa}
-.tviz-name{font-size:0.9rem;font-weight:600;color:var(--ink)}
-.tviz-dates{font-size:0.72rem;color:#999;margin-top:2px}
-.tviz-badge{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;color:var(--branch-light)}
+.tviz-node-mid{border-color:#ddd;background:#fafafa}
+.tviz-name{font-size:0.85rem;font-weight:600;color:var(--ink)}
+.tviz-dates{font-size:0.7rem;color:#999;margin-top:1px}
+.tviz-badge{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-top:3px;color:var(--branch-light)}
 .tviz-node-a .tviz-badge{color:var(--green)}
 .tviz-node-b .tviz-badge{color:var(--gold)}
 .tviz-node-lca .tviz-badge{color:var(--branch)}
-.tviz-edge-up,.tviz-edge-down{display:flex;align-items:center;gap:6px;padding:2px 0 2px 18px;position:relative}
-.tviz-edge-up::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--branch);opacity:0.25}
-.tviz-edge-up::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:var(--branch);opacity:0.25}
-.tviz-edge-down::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--gold);opacity:0.35}
-.tviz-edge-down::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:var(--gold);opacity:0.35}
-.tviz-edge-label{font-size:0.68rem;color:#bbb;font-style:italic;padding-left:4px}
-.tviz-edge-partner{display:flex;align-items:center;gap:6px;padding:2px 0 2px 18px;position:relative}
-.tviz-edge-partner::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:#c084fc;opacity:0.4}
-.tviz-edge-partner::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:#c084fc;opacity:0.4}
-.tviz-edge-partner .tviz-edge-label{color:#a855f7}
+.tviz-peak{display:flex;justify-content:center;margin-bottom:0;padding:0 20%}
+.tviz-branch-lines{display:flex;height:32px;margin:0 10%}
+.tviz-branch-left{flex:1;border-right:2px solid var(--branch);border-bottom:2px solid var(--branch);opacity:0.3;border-radius:0 0 8px 0}
+.tviz-branch-right{flex:1;border-left:2px solid var(--branch);border-bottom:2px solid var(--branch);opacity:0.3;border-radius:0 0 0 8px}
+.tviz-trunk{width:100%}
+.tviz-trunk-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+.tviz-trunk-cell{display:flex;flex-direction:column}
+.tviz-trunk-left{align-items:flex-end}
+.tviz-trunk-right{align-items:flex-start}
+.tviz-down-connector{display:flex;align-items:center;height:24px;padding:0 8px}
+.tviz-down-left{justify-content:flex-end}
+.tviz-down-right{justify-content:flex-start}
+.tviz-down-connector::before{content:'';display:block;width:2px;height:100%;background:var(--branch);opacity:0.25;margin:0 4px}
+.tviz-edge-label{font-size:0.65rem;color:#bbb;font-style:italic}
+.tviz-two-col{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.tviz-col{display:flex;flex-direction:column}
+.tviz-col-mid{display:flex;align-items:center;justify-content:center}
+.tviz-horiz-line{width:40px;height:2px;background:var(--branch);opacity:0.3}
+.tviz-horiz-partner{font-size:0.7rem;color:#a855f7;font-style:italic;white-space:nowrap}
 .meta-item{font-size:0.8rem;color:#888}
 .meta-item strong{color:var(--branch);font-weight:600}
 .error-card{background:#fff5f5;border:1px solid #f5c6c6;border-radius:10px;padding:20px;text-align:center;display:none}
@@ -692,61 +700,96 @@ function buildTreeViz(result) {
   var path = result.path;
   var rels = result.rels || [];
   var lca = result.lca;
-  var lcaIdx = lca ? path.indexOf(lca) : -1;
+  var lcaIdx = lca ? path.indexOf(lca) : Math.floor((path.length - 1) / 2);
   if (lcaIdx < 0) lcaIdx = Math.floor((path.length - 1) / 2);
 
-  var upLeg = path.slice(0, lcaIdx + 1);
-  var downLeg = path.slice(lcaIdx);
+  var upLeg = path.slice(0, lcaIdx + 1);   // Person A up to LCA
+  var downLeg = path.slice(lcaIdx);         // LCA down to Person B
+
+  // Build columns: left = A's ancestry, right = B's ancestry, peak = LCA
+  // We'll render as a proper inverted V shape
+
+  function nodeHTML(id, role, extraClass) {
+    var p = treeData[id];
+    var name = p ? p.name : id;
+    var dates = p ? formatDates(p) : '';
+    var badge = role ? '<div class="tviz-badge">' + role + '</div>' : '';
+    var cls = 'tviz-node ' + (extraClass || 'tviz-node-mid');
+    return '<div class="' + cls + '">' +
+      '<div class="tviz-name">' + escHtml(name) + '</div>' +
+      (dates ? '<div class="tviz-dates">' + dates + '</div>' : '') +
+      badge + '</div>';
+  }
 
   var html = '<div class="tree-viz">';
 
-  upLeg.forEach(function(id, i) {
-    var p = treeData[id];
-    var name = p ? p.name : id;
-    var isA = i === 0;
-    var isLCA = i === upLeg.length - 1;
-    var rel = i > 0 ? (rels[i - 1] || 'parent') : '';
-    var nodeClass = isA ? 'tviz-node tviz-node-a' : isLCA && downLeg.length > 1 ? 'tviz-node tviz-node-lca' : 'tviz-node tviz-node-mid';
-    var badge = isA ? 'You / Person 1' : isLCA && downLeg.length > 1 ? 'Common Ancestor' : '';
-    var dates = p ? formatDates(p) : '';
-
-    html += '<div class="tviz-row" style="padding-left:' + (i * 28) + 'px">';
-    if (i > 0) {
-      var edgeLabel = rel === 'partner' ? 'married' : 'parent';
-      var edgeClass = rel === 'partner' ? 'tviz-edge-partner' : 'tviz-edge-up';
-      html += '<div class="' + edgeClass + '"><span class="tviz-edge-label">' + edgeLabel + '</span></div>';
-    }
-    html += '<div class="' + nodeClass + '">';
-    html += '<div class="tviz-name">' + escHtml(name) + '</div>';
-    if (dates) html += '<div class="tviz-dates">' + dates + '</div>';
-    if (badge) html += '<div class="tviz-badge">' + badge + '</div>';
+  // If only 2 people (direct relationship or spouse)
+  if (path.length <= 2) {
+    html += '<div class="tviz-two-col">';
+    html += '<div class="tviz-col">' + nodeHTML(path[0], 'Person 1', 'tviz-node-a') + '</div>';
+    var connector = rels[0] === 'partner' ? '<div class="tviz-horiz-partner">married</div>' : '<div class="tviz-horiz-line"></div>';
+    html += '<div class="tviz-col-mid">' + connector + '</div>';
+    html += '<div class="tviz-col">' + nodeHTML(path[path.length-1], 'Person 2', 'tviz-node-b') + '</div>';
     html += '</div></div>';
-  });
+    return html;
+  }
 
-  downLeg.slice(1).forEach(function(id, i) {
-    var p = treeData[id];
-    var name = p ? p.name : id;
-    var isB = i === downLeg.length - 2;
-    var relIdx = lcaIdx + i;
-    var rel = rels[relIdx] || 'child';
-    var depth = upLeg.length - 1;
-    var nodeIndent = Math.max(0, (depth - i - 1) * 28);
-    var nodeClass = isB ? 'tviz-node tviz-node-b' : 'tviz-node tviz-node-mid';
-    var badge = isB ? 'Person 2' : '';
-    var dates = p ? formatDates(p) : '';
-
-    html += '<div class="tviz-row" style="padding-left:' + nodeIndent + 'px">';
-    var edgeLabel = rel === 'partner' ? 'married' : 'child';
-    var edgeClass = rel === 'partner' ? 'tviz-edge-partner' : 'tviz-edge-down';
-    html += '<div class="' + edgeClass + '"><span class="tviz-edge-label">' + edgeLabel + '</span></div>';
-    html += '<div class="' + nodeClass + '">';
-    html += '<div class="tviz-name">' + escHtml(name) + '</div>';
-    if (dates) html += '<div class="tviz-dates">' + dates + '</div>';
-    if (badge) html += '<div class="tviz-badge">' + badge + '</div>';
-    html += '</div></div>';
-  });
-
+  // PEAK: Common ancestor centered
+  html += '<div class="tviz-peak">';
+  html += nodeHTML(upLeg[upLeg.length - 1], upLeg.length > 1 ? 'Common Ancestor' : '', 'tviz-node-lca');
   html += '</div>';
+
+  // TRUNK: Two columns descending from LCA
+  // Left column: LCA down to A (reversed upLeg)
+  // Right column: LCA down to B (downLeg)
+  var leftCol = upLeg.slice(0, upLeg.length - 1).reverse(); // A's ancestors minus LCA, reversed so LCA's child is first
+  var rightCol = downLeg.slice(1); // B's side minus LCA
+
+  var maxRows = Math.max(leftCol.length, rightCol.length);
+
+  html += '<div class="tviz-trunk">';
+
+  // Branch lines from LCA
+  if (maxRows > 0) {
+    html += '<div class="tviz-branch-lines">';
+    html += '<div class="tviz-branch-left"></div>';
+    html += '<div class="tviz-branch-right"></div>';
+    html += '</div>';
+  }
+
+  // Rows
+  for (var i = 0; i < maxRows; i++) {
+    html += '<div class="tviz-trunk-row">';
+
+    // Left cell
+    html += '<div class="tviz-trunk-cell tviz-trunk-left">';
+    if (i < leftCol.length) {
+      var leftId = leftCol[i];
+      var isA = i === leftCol.length - 1;
+      var leftRel = rels[upLeg.length - 2 - i] || 'child';
+      html += '<div class="tviz-down-connector tviz-down-left">';
+      html += '<span class="tviz-edge-label">' + (leftRel === 'partner' ? 'married' : 'child') + '</span></div>';
+      html += nodeHTML(leftId, isA ? 'Person 1' : '', isA ? 'tviz-node-a' : 'tviz-node-mid');
+    }
+    html += '</div>';
+
+    // Right cell
+    html += '<div class="tviz-trunk-cell tviz-trunk-right">';
+    if (i < rightCol.length) {
+      var rightId = rightCol[i];
+      var isB = i === rightCol.length - 1;
+      var rightRel = rels[lcaIdx + i] || 'child';
+      html += '<div class="tviz-down-connector tviz-down-right">';
+      html += '<span class="tviz-edge-label">' + (rightRel === 'partner' ? 'married' : 'child') + '</span></div>';
+      html += nodeHTML(rightId, isB ? 'Person 2' : '', isB ? 'tviz-node-b' : 'tviz-node-mid');
+    }
+    html += '</div>';
+
+    html += '</div>'; // trunk-row
+  }
+
+  html += '</div>'; // trunk
+  html += '</div>'; // tree-viz
   return html;
 }
 
