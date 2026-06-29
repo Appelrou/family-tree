@@ -544,7 +544,7 @@
     .result-relationship { font-size: 1.5rem; }
   }
 </style>
-<script defer>
+<script>
 // ============================================================
 // CONFIG
 // ============================================================
@@ -565,6 +565,7 @@ let selectedB = null;
 // ============================================================
 // BOOT — check for token in URL hash (OAuth callback)
 // ============================================================
+window.addEventListener('DOMContentLoaded', function() {
 (function boot() {
   const hash = parseHash();
   if (hash.access_token) {
@@ -589,6 +590,7 @@ let selectedB = null;
     showPhase('login');
   }
 })();
+}); // end DOMContentLoaded
 
 function parseHash() {
   // Geni may return token as query param (?) or hash (#)
