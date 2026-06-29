@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Relationship Finder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+:root{--ink:#1a1a1a;--parchment:#faf7f2;--aged:#f0ebe1;--gold:#b8860b;--gold-light:#d4a017;--gold-pale:#f5e9c8;--branch:#5c4a2a;--branch-light:#8b6e3e;--mist:#e8e2d8;--green:#2d5a3d;--error:#8b2020}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--parchment);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+header{width:100%;background:var(--branch);padding:28px 24px 24px;text-align:center}
+header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold-pale)}
+header p{color:rgba(245,233,200,0.7);font-size:0.85rem;margin-top:6px;letter-spacing:0.05em;text-transform:uppercase}
+main{width:100%;max-width:680px;padding:32px 20px 60px}
+.phase{display:none;animation:fadeIn 0.35s ease}
+.phase.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:white;border:1px solid var(--mist);border-radius:12px;padding:40px 36px;text-align:center;box-shadow:0 2px 20px rgba(92,74,42,0.08)}
+.card h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--branch);margin-bottom:10px}
+.card p{color:#666;font-size:0.9rem;line-height:1.65;margin-bottom:20px}
+.card ol{text-align:left;font-size:0.88rem;color:#666;line-height:2.2;margin-bottom:24px;padding-left:24px}
+.btn{background:var(--branch);color:var(--gold-pale);border:none;border-radius:8px;padding:14px 32px;font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.2s;display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.btn:hover{background:var(--branch-light)}
+.btn-gold{background:var(--gold)}
+.btn-gold:hover{background:var(--gold-light)}
+.token-row{display:flex;gap:8px;margin-top:8px}
+.token-row input{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;font-family:Inter,sans-serif}
+.token-row input:focus{outline:none;border-color:var(--gold)}
+.privacy-note{margin-top:16px;font-size:0.78rem;color:#999}
+.tree-loader{font-size:42px;animation:sway 2s ease-in-out infinite;display:block;margin-bottom:20px}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.progress-bar-wrap{background:var(--aged);border-radius:99px;height:6px;margin:24px auto 12px;max-width:320px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:99px;width:0%;transition:width 0.4s ease}
+.loading-status{font-size:0.82rem;color:#888;min-height:20px}
+.loading-count{font-size:0.9rem;color:var(--branch);font-weight:500;margin-top:6px}
+.finder-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.finder-header h2{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--branch)}
+.badge{background:var(--gold-pale);color:var(--branch);border:1px solid var(--gold);border-radius:99px;font-size:0.78rem;font-weight:600;padding:4px 12px}
+.selector-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;margin-bottom:20px}
+.connector-col{display:flex;align-items:center;justify-content:center;padding-top:32px;color:var(--branch-light);font-size:1.2rem}
+.person-selector{background:white;border:1.5px solid var(--mist);border-radius:10px;padding:14px;transition:border-color 0.2s}
+.person-selector:focus-within{border-color:var(--gold)}
+.person-selector label{display:block;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--branch-light);margin-bottom:8px}
+.search-wrap{position:relative}
+.search-wrap input{width:100%;border:none;outline:none;font-family:'Inter',sans-serif;font-size:0.95rem;color:var(--ink);background:transparent;padding:0}
+.search-wrap input::placeholder{color:#bbb}
+.selected-person{display:none;align-items:center;gap:8px}
+.selected-person.visible{display:flex}
+.person-name-sel{font-size:0.9rem;font-weight:500;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clear-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:16px;padding:0;line-height:1}
+.clear-btn:hover{color:var(--error)}
+.dropdown{position:absolute;top:calc(100% + 4px);left:-14px;right:-14px;background:white;border:1.5px solid var(--gold);border-radius:8px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(92,74,42,0.15);display:none}
+.dropdown.open{display:block}
+.dropdown-item{padding:10px 14px;cursor:pointer;font-size:0.88rem;border-bottom:1px solid var(--aged);display:flex;align-items:center;gap:10px;transition:background 0.12s}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item:hover{background:var(--gold-pale)}
+.item-dates{font-size:0.75rem;color:#999;margin-left:auto;white-space:nowrap}
+.dropdown-empty{padding:16px 14px;color:#aaa;font-size:0.85rem;text-align:center}
+.find-btn-wrap{text-align:center;margin:4px 0 28px}
+.find-btn{background:var(--gold);color:white;border:none;border-radius:8px;padding:14px 48px;font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:background 0.2s,opacity 0.2s}
+.find-btn:hover:not(:disabled){background:var(--gold-light)}
+.find-btn:disabled{opacity:0.4;cursor:not-allowed}
+.result-card{background:white;border:1px solid var(--mist);border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(92,74,42,0.08);display:none}
+.result-card.visible{display:block;animation:fadeIn 0.4s ease}
+.result-banner{background:linear-gradient(135deg,var(--branch) 0%,var(--branch-light) 100%);padding:28px 28px 24px;text-align:center;position:relative}
+.result-banner::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:20px;background:white;clip-path:ellipse(55% 100% at 50% 100%)}
+.result-relationship{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--gold-pale);margin-bottom:4px;line-height:1.2}
+.result-names{color:rgba(245,233,200,0.7);font-size:0.82rem;letter-spacing:0.04em}
+.result-body{padding:28px}
+.path-section h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--branch);margin-bottom:14px}
+.path-chain{display:flex;flex-direction:column}
+.path-node{display:flex;align-items:center;gap:12px}
+.path-dot{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.path-node-name{font-size:0.9rem;font-weight:500;color:var(--ink)}
+.path-node-rel{font-size:0.75rem;color:#999;margin-left:4px}
+.path-line{display:flex;gap:12px;height:24px}
+.path-line-wrap{width:10px;display:flex;justify-content:center}
+.path-line-inner{width:2px;background:var(--gold);opacity:0.35;flex:1}
+.result-meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--aged);display:flex;gap:20px;flex-wrap:wrap}
+.tree-viz{padding:12px 0;font-family:'Inter',sans-serif}
+.tviz-node{display:flex;flex-direction:column;padding:8px 12px;border-radius:8px;border:1.5px solid var(--mist);background:white;width:100%}
+.tviz-node-a{border-color:var(--green);background:#f0f7f3}
+.tviz-node-b{border-color:var(--gold);background:var(--gold-pale)}
+.tviz-node-lca{border-color:var(--branch);background:var(--aged)}
+.tviz-node-mid{border-color:#ddd;background:#fafafa}
+.tviz-name{font-size:0.85rem;font-weight:600;color:var(--ink)}
+.tviz-dates{font-size:0.7rem;color:#999;margin-top:1px}
+.tviz-badge{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-top:3px;color:var(--branch-light)}
+.tviz-node-a .tviz-badge{color:var(--green)}
+.tviz-node-b .tviz-badge{color:var(--gold)}
+.tviz-node-lca .tviz-badge{color:var(--branch)}
+.tviz-peak{display:flex;justify-content:center;margin-bottom:0;padding:0 20%}
+.tviz-branch-lines{display:flex;height:32px;margin:0 10%}
+.tviz-branch-left{flex:1;border-right:2px solid var(--branch);border-bottom:2px solid var(--branch);opacity:0.3;border-radius:0 0 8px 0}
+.tviz-branch-right{flex:1;border-left:2px solid var(--branch);border-bottom:2px solid var(--branch);opacity:0.3;border-radius:0 0 0 8px}
+.tviz-trunk{width:100%}
+.tviz-trunk-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+.tviz-trunk-cell{display:flex;flex-direction:column}
+.tviz-trunk-left{align-items:flex-end}
+.tviz-trunk-right{align-items:flex-start}
+.tviz-down-connector{display:flex;align-items:center;height:24px;padding:0 8px}
+.tviz-down-left{justify-content:flex-end}
+.tviz-down-right{justify-content:flex-start}
+.tviz-down-connector::before{content:'';display:block;width:2px;height:100%;background:var(--branch);opacity:0.25;margin:0 4px}
+.tviz-edge-label{font-size:0.65rem;color:#bbb;font-style:italic}
+.tviz-two-col{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.tviz-col{display:flex;flex-direction:column}
+.tviz-col-mid{display:flex;align-items:center;justify-content:center}
+.tviz-horiz-line{width:40px;height:2px;background:var(--branch);opacity:0.3}
+.tviz-horiz-partner{font-size:0.7rem;color:#a855f7;font-style:italic;white-space:nowrap}
+.meta-item{font-size:0.8rem;color:#888}
+.meta-item strong{color:var(--branch);font-weight:600}
+.error-card{background:#fff5f5;border:1px solid #f5c6c6;border-radius:10px;padding:20px;text-align:center;display:none}
+.error-card.visible{display:block}
+.error-card p{color:var(--error);font-size:0.9rem}
+.refresh-row{text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--mist)}
+.refresh-btn{background:none;border:1.5px solid var(--mist);border-radius:8px;padding:8px 20px;font-family:'Inter',sans-serif;font-size:0.82rem;color:#999;cursor:pointer;transition:border-color 0.2s,color 0.2s;margin:4px}
+.refresh-btn:hover{border-color:var(--branch-light);color:var(--branch)}
+footer{margin-top:auto;padding:20px;text-align:center;font-size:0.75rem;color:#bbb}
+</style>
+</head>
+<body>
+<header>
+  <h1>Family Relationship Finder</h1>
+  <p>Moses Family Tree &middot; Powered by Geni</p>
+</header>
+<main>
+
+<!-- PHASE 1: Login -->
+<div class="phase active" id="phase-login">
+  <div class="card">
+    <h2>Connect Your Family Tree</h2>
+    <p>Follow these steps to load the Moses family tree:</p>
+    <ol>
+      <li>Click <strong>"Get Access Token"</strong> below</li>
+      <li>Log into Geni if prompted, then click <strong>Authorize</strong></li>
+      <li>On the next page, copy the <strong>access_token</strong> value from the URL bar</li>
+      <li>Paste it in the box below and click <strong>Load Tree</strong></li>
+    </ol>
+    <a class="btn" href="https://www.geni.com/platform/oauth/authorize?client_id=2080&redirect_uri=https%3A%2F%2Fappelrou.github.io%2Ffamily-tree%2F&response_type=token" target="_blank">Get Access Token</a>
+    <div class="token-row" style="margin-top:20px">
+      <input type="text" id="token-input" placeholder="Paste access_token here...">
+      <button class="btn btn-gold" onclick="useToken()">Load Tree</button>
+    </div>
+    <div class="privacy-note">Read-only access &middot; Your data stays in this browser</div>
+  </div>
+</div>
+
+<!-- PHASE 2: Loading -->
+<div class="phase" id="phase-loading">
+  <div class="card">
+    <span class="tree-loader">&#127795;</span>
+    <h2>Growing your family tree...</h2>
+    <p id="loading-subtitle" style="color:#888;font-size:0.88rem">Connecting to Geni</p>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="loading-status" id="loading-status">Authenticating...</div>
+    <div class="loading-count" id="loading-count"></div>
+  </div>
+</div>
+
+<!-- PHASE 3: Finder -->
+<div class="phase" id="phase-finder">
+  <div class="finder-header">
+    <h2>Find a Relationship</h2>
+    <span class="badge" id="tree-count-badge">0 people</span>
+  </div>
+
+  <div class="selector-row">
+    <div class="person-selector" id="selector-a">
+      <label>First Person</label>
+      <div class="search-wrap">
+        <div class="selected-person" id="selected-a">
+          <span id="avatar-a">?</span>
+          <span class="person-name-sel" id="name-a"></span>
+          <button class="clear-btn" onclick="clearPerson('a')">x</button>
+        </div>
+        <input type="text" id="search-a" placeholder="Search by name..." oninput="handleSearch(this,'a')" onfocus="openDropdown('a')" autocomplete="off">
+        <div class="dropdown" id="dropdown-a"></div>
+      </div>
+    </div>
+    <div class="connector-col">&harr;</div>
+    <div class="person-selector" id="selector-b">
+      <label>Second Person</label>
+      <div class="search-wrap">
+        <div class="selected-person" id="selected-b">
+          <span id="avatar-b">?</span>
+          <span class="person-name-sel" id="name-b"></span>
+          <button class="clear-btn" onclick="clearPerson('b')">x</button>
+        </div>
+        <input type="text" id="search-b" placeholder="Search by name..." oninput="handleSearch(this,'b')" onfocus="openDropdown('b')" autocomplete="off">
+        <div class="dropdown" id="dropdown-b"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="find-btn-wrap">
+    <button class="find-btn" id="find-btn" onclick="findRelationship()" disabled>Find Relationship</button>
+  </div>
+
+  <div class="error-card" id="error-card"><p id="error-msg"></p></div>
+
+  <div class="result-card" id="result-card">
+    <div class="result-banner">
+      <div class="result-relationship" id="result-relationship">--</div>
+      <div class="result-names" id="result-names"></div>
+    </div>
+    <div class="result-body">
+      <div class="path-section">
+        <h3>Connection Path</h3>
+        <div class="path-chain" id="path-chain"></div>
+      </div>
+      <div class="result-meta" id="result-meta"></div>
+    </div>
+  </div>
+
+  <div class="refresh-row">
+    <button class="refresh-btn" onclick="refreshTree()">Reload tree data</button>
+    <button class="refresh-btn" onclick="showPhase('login')">Reconnect to Geni</button>
+  </div>
+</div>
+
+</main>
+<footer>Family Relationship Finder &middot; Moses Family Tree &middot; Powered by Geni API</footer>
+
+<script>
+var CLIENT_ID = '2080';
+var REDIRECT_URI = 'https://appelrou.github.io/family-tree/';
+var GENI_API = 'https://www.geni.com/api';
+
+var accessToken = null;
+var treeData = {};
+var profileList = [];
+var selectedA = null;
+var selectedB = null;
+
+// On page load - check for cached tree
+window.addEventListener('load', function() {
+  var savedToken = localStorage.getItem('geni_token');
+  var savedTree = localStorage.getItem('geni_tree');
+  if (savedToken && savedTree) {
+    try {
+      var parsed = JSON.parse(savedTree);
+      if (parsed && Object.keys(parsed).length > 5) {
+        accessToken = savedToken;
+        treeData = parsed;
+        buildProfileList();
+        showPhase('finder');
+        return;
+      }
+    } catch(e) {}
+  }
+  showPhase('login');
+});
+
+function useToken() {
+  var input = document.getElementById('token-input');
+  var token = input ? input.value.trim() : '';
+  if (!token) { alert('Please paste your access token first.'); return; }
+  accessToken = token;
+  localStorage.setItem('geni_token', token);
+  treeData = {};
+  showPhase('loading');
+  loadEntireTree();
+}
+
+function geniGet(path) {
+  return new Promise(function(resolve, reject) {
+    var cbName = 'geni_cb_' + Math.random().toString(36).substring(2);
+    var sep = path.indexOf('?') >= 0 ? '&' : '?';
+    var url = GENI_API + path + sep + 'access_token=' + encodeURIComponent(accessToken) + '&callback=' + cbName;
+    var script = document.createElement('script');
+    var timeout = setTimeout(function() {
+      cleanup();
+      reject(new Error('Request timed out'));
+    }, 15000);
+    window[cbName] = function(data) {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error.message || JSON.stringify(data.error)));
+      else resolve(data);
+    };
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    script.onerror = function() { cleanup(); reject(new Error('Script load failed')); };
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+async function loadEntireTree() {
+  setProgress(5, 'Getting your profile...');
+  try {
+    // Get current user profile first
+    var me = await geniGet('/profile');
+    var myId = me.id;
+    treeData[myId] = normalizeProfile(me);
+    setProgress(10, 'Found you: ' + me.name);
+
+    // Seed with Joseph and Leah Weintraub + yourself
+    var seeds = [
+      myId,
+      'profile-6000000220321418890',
+      'profile-6000000015201367107'
+    ];
+
+    var visited = new Set();
+    var queue = [];
+    seeds.forEach(function(sid) {
+      if (!visited.has(sid)) { visited.add(sid); queue.push(sid); }
+    });
+
+    while (queue.length > 0) {
+      var id = queue.shift();
+      await expandProfile(id, visited, queue);
+      var total = visited.size;
+      var pct = Math.min(90, 10 + (total / 3));
+      setProgress(pct, 'Mapping the family tree...', total + ' family members found');
+      await sleep(800);
+      if (visited.size > 1200) break;
+    }
+
+    setProgress(93, 'Reconciling family connections...');
+    reconcileEdges();
+    setProgress(95, 'Organizing names...');
+    buildProfileList();
+    setProgress(100, 'Ready!');
+    localStorage.setItem('geni_tree', JSON.stringify(treeData));
+    await sleep(600);
+    showPhase('finder');
+  } catch(err) {
+    document.getElementById('loading-status').textContent = 'Error: ' + err.message;
+    document.getElementById('loading-subtitle').textContent = 'Please reconnect to Geni.';
+    console.error(err);
+  }
+}
+
+async function expandProfile(profileId, visited, queue) {
+  try {
+    var numId = numericId(profileId);
+    var data = await geniGet('/profile-' + numId + '/immediate-family');
+    var nodes = data.nodes || {};
+
+    // Add new profiles to tree
+    for (var nid in nodes) {
+      var node = nodes[nid];
+      if (nid.indexOf('union-') === 0) continue;
+      var fullId = node.id || ('https://www.geni.com/api/' + nid);
+      if (!visited.has(fullId) && !visited.has(nid)) {
+        visited.add(fullId);
+        visited.add(nid);
+        treeData[fullId] = normalizeProfile(node);
+        queue.push(fullId);
+      }
+    }
+
+    // Build edges using Geni's union/edges model
+    var focusNumId = numericId(profileId);
+    var focusKey = 'profile-' + focusNumId;
+    var focusNode = nodes[focusKey] || {};
+    var focusEdges = focusNode.edges || {};
+
+    var target = treeData[profileId];
+    if (!target) {
+      for (var key in treeData) {
+        if (numericId(key) === focusNumId) { target = treeData[key]; break; }
+      }
+    }
+
+    if (target) {
+      var parentIds = [];
+      var childIds = [];
+      var partnerIds = [];
+
+      for (var unionKey in focusEdges) {
+        if (unionKey.indexOf('union-') !== 0) continue;
+        var focusRel = focusEdges[unionKey].rel;
+        var unionNode = nodes[unionKey];
+        if (!unionNode) continue;
+        var unionEdges = unionNode.edges || {};
+
+        for (var profileKey in unionEdges) {
+          if (profileKey.indexOf('profile-') !== 0) continue;
+          var memberNode = nodes[profileKey];
+          if (!memberNode) continue;
+          var memberId = memberNode.id || ('https://www.geni.com/api/' + profileKey);
+          if (numericId(memberId) === focusNumId) continue;
+          var memberRel = unionEdges[profileKey].rel;
+
+          if (focusRel === 'child' && memberRel === 'partner') {
+            parentIds.push(memberId);
+          } else if (focusRel === 'partner' && memberRel === 'partner') {
+            partnerIds.push(memberId);
+          } else if (focusRel === 'partner' && memberRel === 'child') {
+            childIds.push(memberId);
+          }
+        }
+      }
+
+      target.parent_ids = parentIds;
+      target.child_ids = childIds;
+      target.partner_ids = partnerIds;
+    }
+  } catch(e) {
+    if (e.message && e.message.toLowerCase().indexOf('rate') >= 0) {
+      queue.push(profileId);
+      await sleep(5000);
+    } else {
+      console.warn('Could not expand profile', profileId, e.message);
+    }
+  }
+}
+
+function reconcileEdges() {
+  // For every profile, ensure edges are bidirectional:
+  // If A has B as a child, B should have A as a parent
+  // If A has B as a parent, B should have A as a child
+  for (var id in treeData) {
+    var p = treeData[id];
+
+    // For each child, make sure child has this profile as parent
+    (p.child_ids || []).forEach(function(childId) {
+      var child = treeData[childId];
+      if (child && (child.parent_ids || []).indexOf(id) < 0) {
+        child.parent_ids = child.parent_ids || [];
+        child.parent_ids.push(id);
+      }
+    });
+
+    // For each parent, make sure parent has this profile as child
+    (p.parent_ids || []).forEach(function(parentId) {
+      var parent = treeData[parentId];
+      if (parent && (parent.child_ids || []).indexOf(id) < 0) {
+        parent.child_ids = parent.child_ids || [];
+        parent.child_ids.push(id);
+      }
+    });
+
+    // For each partner, make sure partner has this profile as partner
+    (p.partner_ids || []).forEach(function(partnerId) {
+      var partner = treeData[partnerId];
+      if (partner && (partner.partner_ids || []).indexOf(id) < 0) {
+        partner.partner_ids = partner.partner_ids || [];
+        partner.partner_ids.push(id);
+      }
+    });
+  }
+}
+
+function normalizeProfile(p) {
+  var birth = p.birth || {};
+  var byear = birth.date ? (birth.date.year || null) : null;
+  var death = p.death || {};
+  var dyear = death.date ? (death.date.year || null) : null;
+  var name = p.name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Unknown';
+  return { id: p.id, name: name, gender: p.gender || 'unknown', birth_year: byear, death_year: dyear, parent_ids: [], child_ids: [], partner_ids: [] };
+}
+
+function numericId(id) {
+  if (!id) return id;
+  var str = String(id);
+  var match = str.match(/profile-([0-9]+)/);
+  return match ? match[1] : str.replace('profile-', '');
+}
+
+function buildProfileList() {
+  profileList = Object.values(treeData)
+    .filter(function(p) { return p.name && p.name !== 'Unknown'; })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); });
+  var badge = document.getElementById('tree-count-badge');
+  if (badge) badge.textContent = profileList.length + ' people';
+}
+
+function handleSearch(input, side) {
+  var q = input.value.toLowerCase().trim();
+  var dropdown = document.getElementById('dropdown-' + side);
+  if (!q) { dropdown.innerHTML = ''; dropdown.classList.remove('open'); return; }
+  var matches = profileList.filter(function(p) { return p.name.toLowerCase().indexOf(q) >= 0; }).slice(0, 12);
+  if (matches.length === 0) {
+    dropdown.innerHTML = '<div class="dropdown-empty">No matches found</div>';
+  } else {
+    dropdown.innerHTML = matches.map(function(p) {
+      var dates = formatDates(p);
+      return '<div class="dropdown-item" onclick="selectPerson(\'' + side + '\',\'' + p.id + '\')">' +
+        '<span>' + escHtml(p.name) + '</span>' +
+        (dates ? '<span class="item-dates">' + dates + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  dropdown.classList.add('open');
+}
+
+function openDropdown(side) {
+  var input = document.getElementById('search-' + side);
+  if (input && input.value.trim()) handleSearch(input, side);
+}
+
+function selectPerson(side, profileId) {
+  var profile = treeData[profileId];
+  if (!profile) return;
+  if (side === 'a') selectedA = profile;
+  else selectedB = profile;
+  document.getElementById('selected-' + side).classList.add('visible');
+  document.getElementById('name-' + side).textContent = profile.name;
+  document.getElementById('search-' + side).style.display = 'none';
+  document.getElementById('dropdown-' + side).classList.remove('open');
+  updateFindButton();
+  hideResults();
+}
+
+function clearPerson(side) {
+  if (side === 'a') selectedA = null;
+  else selectedB = null;
+  document.getElementById('selected-' + side).classList.remove('visible');
+  document.getElementById('search-' + side).style.display = '';
+  document.getElementById('search-' + side).value = '';
+  updateFindButton();
+  hideResults();
+}
+
+document.addEventListener('click', function(e) {
+  ['a','b'].forEach(function(side) {
+    var sel = document.getElementById('selector-' + side);
+    if (sel && !sel.contains(e.target)) {
+      document.getElementById('dropdown-' + side).classList.remove('open');
+    }
+  });
+});
+
+function updateFindButton() {
+  var btn = document.getElementById('find-btn');
+  if (btn) btn.disabled = !(selectedA && selectedB && selectedA.id !== selectedB.id);
+}
+
+function findRelationship() {
+  if (!selectedA || !selectedB) return;
+  hideResults();
+  document.getElementById('find-btn').disabled = true;
+  document.getElementById('find-btn').textContent = 'Calculating...';
+  try {
+    var result = computeRelationship(selectedA.id, selectedB.id);
+    displayResult(result);
+  } catch(e) {
+    showError('Could not determine relationship: ' + e.message);
+  }
+  document.getElementById('find-btn').disabled = false;
+  document.getElementById('find-btn').textContent = 'Find Relationship';
+  updateFindButton();
+}
+
+function computeRelationship(idA, idB) {
+  if (idA === idB) return { label: 'Same person', path: [idA], rels: [] };
+
+  function getBloodEdges(id) {
+    var p = treeData[id];
+    if (!p) return [];
+    var edges = [];
+    (p.parent_ids || []).forEach(function(pid) { edges.push({ id: pid, rel: 'parent' }); });
+    (p.child_ids || []).forEach(function(cid) { edges.push({ id: cid, rel: 'child' }); });
+    return edges;
+  }
+
+  function getAllEdges(id) {
+    var p = treeData[id];
+    if (!p) return [];
+    var edges = getBloodEdges(id);
+    (p.partner_ids || []).forEach(function(sid) { edges.push({ id: sid, rel: 'partner' }); });
+    return edges;
+  }
+
+  function bfs(startId, endId, edgeFn) {
+    var visited = new Map();
+    var queue = [startId];
+    visited.set(startId, null);
+    while (queue.length > 0) {
+      var curr = queue.shift();
+      if (curr === endId) {
+        var path = [], rels = [], node = endId;
+        while (node !== null) {
+          path.unshift(node);
+          var prev = visited.get(node);
+          if (prev) rels.unshift(prev.rel);
+          node = prev ? prev.from : null;
+        }
+        return { path: path, rels: rels };
+      }
+      edgeFn(curr).forEach(function(edge) {
+        if (!visited.has(edge.id) && treeData[edge.id]) {
+          visited.set(edge.id, { from: curr, rel: edge.rel });
+          queue.push(edge.id);
+        }
+      });
+    }
+    return null;
+  }
+
+  function getAncestors(id) {
+    var anc = new Map();
+    var queue = [{ id: id, gen: 0 }];
+    var seen = new Set();
+    while (queue.length > 0) {
+      var item = queue.shift();
+      var normId = numericId(item.id);
+      if (seen.has(normId)) continue;
+      seen.add(normId);
+      // Store by both full ID and numeric ID
+      anc.set(item.id, item.gen);
+      anc.set(normId, item.gen);
+      var p = treeData[item.id];
+      if (!p) {
+        // Try finding by numeric ID
+        for (var k in treeData) {
+          if (numericId(k) === normId) { p = treeData[k]; break; }
+        }
+      }
+      if (p) (p.parent_ids || []).forEach(function(pid) {
+        if (treeData[pid]) queue.push({ id: pid, gen: item.gen + 1 });
+        else {
+          var pnum = numericId(pid);
+          for (var k in treeData) {
+            if (numericId(k) === pnum) { queue.push({ id: k, gen: item.gen + 1 }); break; }
+          }
+        }
+      });
+    }
+    return anc;
+  }
+
+  function findLCA(ancA, ancB) {
+    var best = null, bestDist = Infinity, gA = 0, gB = 0;
+    ancA.forEach(function(genA, aid) {
+      // Try both full ID and numeric ID match
+      var genB = ancB.has(aid) ? ancB.get(aid) : ancB.get(numericId(aid));
+      if (genB !== undefined) {
+        var total = genA + genB;
+        if (total < bestDist) {
+          bestDist = total; best = aid; gA = genA; gB = genB;
+        }
+      }
+    });
+    // Resolve best to full ID in treeData if needed
+    if (best && !treeData[best]) {
+      var num = numericId(best);
+      for (var k in treeData) {
+        if (numericId(k) === num) { best = k; break; }
+      }
+    }
+    return best ? { id: best, genA: gA, genB: gB } : null;
+  }
+
+  function bloodLabel(upA, upB) {
+    if (upA === 0 && upB === 0) return 'Same person';
+    if (upA === 0) return descendantLabel(upB);
+    if (upB === 0) return ancestorLabel(upA);
+    if (upA === 1 && upB === 1) return 'Siblings';
+    if (upA === 1) return nthLabel(upB - 1) + 'Aunt or Uncle';
+    if (upB === 1) return nthLabel(upA - 1) + 'Niece or Nephew';
+    return cousinLabel(Math.min(upA, upB) - 1, Math.abs(upA - upB));
+  }
+
+  var ancA = getAncestors(idA);
+  var ancB = getAncestors(idB);
+  var lca = findLCA(ancA, ancB);
+
+  // Try blood path first
+  var bloodPath = bfs(idA, idB, getBloodEdges);
+  // Also try full path (includes partners)
+  var fullPath = bfs(idA, idB, getAllEdges);
+
+  var label = 'No connection found in tree';
+  var byMarriage = false;
+  var displayPath = fullPath ? fullPath.path : [idA, idB];
+  var displayRels = fullPath ? fullPath.rels : [];
+  var bestLCA = lca ? lca.id : null;
+
+  if (lca) {
+    label = bloodLabel(lca.genA, lca.genB);
+    if (bloodPath) { displayPath = bloodPath.path; displayRels = bloodPath.rels; }
+  } else if (fullPath) {
+    // Path uses partner links - figure out in-law relationship
+    var rels = fullPath.rels;
+    var path = fullPath.path;
+    byMarriage = true;
+
+    if (path.length === 2) {
+      label = 'Spouses / Partners';
+    } else {
+      // Find the partner link index
+      var partnerIdx = rels.indexOf('partner');
+      if (partnerIdx >= 0) {
+        // The person connected by marriage
+        var marriedPersonId = path[partnerIdx]; // person on A's side before the marriage link
+        var otherSpouseId = path[partnerIdx + 1]; // spouse on B's side
+
+        // What is A's relationship to the married person?
+        var lcaToMarried = findLCA(ancA, getAncestors(marriedPersonId));
+        // What is B's relationship to the other spouse?
+        var ancOther = getAncestors(otherSpouseId);
+        var lcaToOther = findLCA(getAncestors(idB), ancOther);
+
+        if (lcaToMarried) {
+          var relToMarried = bloodLabel(lcaToMarried.genA, lcaToMarried.genB);
+          label = relToMarried + ' (by marriage)';
+        } else if (lcaToOther) {
+          var relToOther = bloodLabel(lcaToOther.genA, lcaToOther.genB);
+          label = relToOther + "'s Spouse (by marriage)";
+        } else {
+          label = 'Related by Marriage';
+        }
+      }
+    }
+  }
+
+  return {
+    label: label,
+    byMarriage: byMarriage,
+    path: displayPath,
+    rels: displayRels,
+    genA: lca ? lca.genA : 0,
+    genB: lca ? lca.genB : 0,
+    lca: bestLCA,
+    distance: displayPath.length - 1
+  };
+}
+
+function ancestorLabel(gen) {
+  if (gen === 1) return 'Parent';
+  if (gen === 2) return 'Grandparent';
+  if (gen === 3) return 'Great-Grandparent';
+  return 'Great-'.repeat(gen - 2) + 'Grandparent';
+}
+function descendantLabel(gen) {
+  if (gen === 1) return 'Child';
+  if (gen === 2) return 'Grandchild';
+  if (gen === 3) return 'Great-Grandchild';
+  return 'Great-'.repeat(gen - 2) + 'Grandchild';
+}
+function nthLabel(n) {
+  if (n === 1) return '';
+  if (n === 2) return 'Grand';
+  return 'Great-'.repeat(n - 2) + 'Grand';
+}
+function cousinLabel(degree, removed) {
+  var ords = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+  var ord = ords[degree] || (degree + 'th');
+  if (removed === 0) return ord + ' Cousin';
+  return ord + ' Cousin ' + removed + 'x Removed';
+}
+
+function displayResult(result) {
+  var nameA = selectedA ? selectedA.name : 'Person A';
+  var nameB = selectedB ? selectedB.name : 'Person B';
+  document.getElementById('result-relationship').textContent = result.label;
+  document.getElementById('result-names').textContent = nameA + '  to  ' + nameB;
+
+  var chainEl = document.getElementById('path-chain');
+  chainEl.innerHTML = '';
+
+  if (result.path && result.path.length > 0) {
+    chainEl.innerHTML = buildTreeViz(result);
+  }
+
+  var meta = document.getElementById('result-meta');
+  var parts = [];
+  if (result.distance !== null) parts.push('<span class="meta-item"><strong>' + result.distance + '</strong> steps apart</span>');
+  if (result.lca && treeData[result.lca]) parts.push('<span class="meta-item">Common ancestor: <strong>' + escHtml(treeData[result.lca].name) + '</strong></span>');
+  meta.innerHTML = parts.join('');
+
+  document.getElementById('result-card').classList.add('visible');
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildTreeViz(result) {
+  var path = result.path;
+  var rels = result.rels || [];
+  var lca = result.lca;
+  var lcaIdx = lca ? path.indexOf(lca) : Math.floor((path.length - 1) / 2);
+  if (lcaIdx < 0) lcaIdx = Math.floor((path.length - 1) / 2);
+
+  var upLeg = path.slice(0, lcaIdx + 1);   // Person A up to LCA
+  var downLeg = path.slice(lcaIdx);         // LCA down to Person B
+
+  // Build columns: left = A's ancestry, right = B's ancestry, peak = LCA
+  // We'll render as a proper inverted V shape
+
+  function nodeHTML(id, role, extraClass) {
+    var p = treeData[id];
+    var name = p ? p.name : id;
+    var dates = p ? formatDates(p) : '';
+    var badge = role ? '<div class="tviz-badge">' + role + '</div>' : '';
+    var cls = 'tviz-node ' + (extraClass || 'tviz-node-mid');
+    return '<div class="' + cls + '">' +
+      '<div class="tviz-name">' + escHtml(name) + '</div>' +
+      (dates ? '<div class="tviz-dates">' + dates + '</div>' : '') +
+      badge + '</div>';
+  }
+
+  var html = '<div class="tree-viz">';
+
+  // If only 2 people (direct relationship or spouse)
+  if (path.length <= 2) {
+    html += '<div class="tviz-two-col">';
+    html += '<div class="tviz-col">' + nodeHTML(path[0], 'Person 1', 'tviz-node-a') + '</div>';
+    var connector = rels[0] === 'partner' ? '<div class="tviz-horiz-partner">married</div>' : '<div class="tviz-horiz-line"></div>';
+    html += '<div class="tviz-col-mid">' + connector + '</div>';
+    html += '<div class="tviz-col">' + nodeHTML(path[path.length-1], 'Person 2', 'tviz-node-b') + '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // PEAK: Common ancestor centered
+  html += '<div class="tviz-peak">';
+  html += nodeHTML(upLeg[upLeg.length - 1], upLeg.length > 1 ? 'Common Ancestor' : '', 'tviz-node-lca');
+  html += '</div>';
+
+  // TRUNK: Two columns descending from LCA
+  // Left column: LCA down to A (reversed upLeg)
+  // Right column: LCA down to B (downLeg)
+  var leftCol = upLeg.slice(0, upLeg.length - 1).reverse(); // A's ancestors minus LCA, reversed so LCA's child is first
+  var rightCol = downLeg.slice(1); // B's side minus LCA
+
+  var maxRows = Math.max(leftCol.length, rightCol.length);
+
+  html += '<div class="tviz-trunk">';
+
+  // Branch lines from LCA
+  if (maxRows > 0) {
+    html += '<div class="tviz-branch-lines">';
+    html += '<div class="tviz-branch-left"></div>';
+    html += '<div class="tviz-branch-right"></div>';
+    html += '</div>';
+  }
+
+  // Rows
+  for (var i = 0; i < maxRows; i++) {
+    html += '<div class="tviz-trunk-row">';
+
+    // Left cell
+    html += '<div class="tviz-trunk-cell tviz-trunk-left">';
+    if (i < leftCol.length) {
+      var leftId = leftCol[i];
+      var isA = i === leftCol.length - 1;
+      var leftRel = rels[upLeg.length - 2 - i] || 'child';
+      html += '<div class="tviz-down-connector tviz-down-left">';
+      html += '<span class="tviz-edge-label">' + (leftRel === 'partner' ? 'married' : 'child') + '</span></div>';
+      html += nodeHTML(leftId, isA ? 'Person 1' : '', isA ? 'tviz-node-a' : 'tviz-node-mid');
+    }
+    html += '</div>';
+
+    // Right cell
+    html += '<div class="tviz-trunk-cell tviz-trunk-right">';
+    if (i < rightCol.length) {
+      var rightId = rightCol[i];
+      var isB = i === rightCol.length - 1;
+      var rightRel = rels[lcaIdx + i] || 'child';
+      html += '<div class="tviz-down-connector tviz-down-right">';
+      html += '<span class="tviz-edge-label">' + (rightRel === 'partner' ? 'married' : 'child') + '</span></div>';
+      html += nodeHTML(rightId, isB ? 'Person 2' : '', isB ? 'tviz-node-b' : 'tviz-node-mid');
+    }
+    html += '</div>';
+
+    html += '</div>'; // trunk-row
+  }
+
+  html += '</div>'; // trunk
+  html += '</div>'; // tree-viz
+  return html;
+}
+
+function hideResults() {
+  document.getElementById('result-card').classList.remove('visible');
+  document.getElementById('error-card').classList.remove('visible');
+}
+function showError(msg) {
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('error-card').classList.add('visible');
+}
+function refreshTree() {
+  localStorage.removeItem('geni_tree');
+  treeData = {};
+  profileList = [];
+  selectedA = null;
+  selectedB = null;
+  showPhase('login');
+}
+function showPhase(name) {
+  ['login','loading','finder'].forEach(function(p) {
+    var el = document.getElementById('phase-' + p);
+    if (el) el.classList.toggle('active', p === name);
+  });
+}
+function setProgress(pct, status, count) {
+  var bar = document.getElementById('progress-bar');
+  var statusEl = document.getElementById('loading-status');
+  var countEl = document.getElementById('loading-count');
+  if (bar) bar.style.width = pct + '%';
+  if (statusEl && status) statusEl.textContent = status;
+  if (countEl && count) countEl.textContent = count;
+}
+function formatDates(p) {
+  if (!p.birth_year && !p.death_year) return '';
+  var b = p.birth_year || '?';
+  return p.death_year ? (b + '-' + p.death_year) : ('b. ' + b);
+}
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+</script>
+</body>
+</html>
