@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -848,3 +849,15 @@ function setProgress(pct, status, count) {
   if (statusEl && status) statusEl.textContent = status;
   if (countEl && count) countEl.textContent = count;
 }
+function formatDates(p) {
+  if (!p.birth_year && !p.death_year) return '';
+  var b = p.birth_year || '?';
+  return p.death_year ? (b + '-' + p.death_year) : ('b. ' + b);
+}
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+</script>
+</body>
+</html>
