@@ -78,6 +78,29 @@ main{width:100%;max-width:680px;padding:32px 20px 60px}
 .path-line-wrap{width:10px;display:flex;justify-content:center}
 .path-line-inner{width:2px;background:var(--gold);opacity:0.35;flex:1}
 .result-meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--aged);display:flex;gap:20px;flex-wrap:wrap}
+.tree-viz{padding:8px 0;font-family:'Inter',sans-serif}
+.tviz-row{position:relative;margin-bottom:2px}
+.tviz-node{display:inline-flex;flex-direction:column;padding:8px 14px;border-radius:8px;border:1.5px solid var(--mist);background:white;min-width:160px;max-width:260px;position:relative}
+.tviz-node-a{border-color:var(--green);background:#f0f7f3}
+.tviz-node-b{border-color:var(--gold);background:var(--gold-pale)}
+.tviz-node-lca{border-color:var(--branch);background:var(--aged)}
+.tviz-node-mid{border-color:#ccc;background:#fafafa}
+.tviz-name{font-size:0.9rem;font-weight:600;color:var(--ink)}
+.tviz-dates{font-size:0.72rem;color:#999;margin-top:2px}
+.tviz-badge{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;color:var(--branch-light)}
+.tviz-node-a .tviz-badge{color:var(--green)}
+.tviz-node-b .tviz-badge{color:var(--gold)}
+.tviz-node-lca .tviz-badge{color:var(--branch)}
+.tviz-edge-up,.tviz-edge-down{display:flex;align-items:center;gap:6px;padding:2px 0 2px 18px;position:relative}
+.tviz-edge-up::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--branch);opacity:0.25}
+.tviz-edge-up::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:var(--branch);opacity:0.25}
+.tviz-edge-down::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--gold);opacity:0.35}
+.tviz-edge-down::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:var(--gold);opacity:0.35}
+.tviz-edge-label{font-size:0.68rem;color:#bbb;font-style:italic;padding-left:4px}
+.tviz-edge-partner{display:flex;align-items:center;gap:6px;padding:2px 0 2px 18px;position:relative}
+.tviz-edge-partner::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:#c084fc;opacity:0.4}
+.tviz-edge-partner::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:10px;height:2px;background:#c084fc;opacity:0.4}
+.tviz-edge-partner .tviz-edge-label{color:#a855f7}
 .meta-item{font-size:0.8rem;color:#888}
 .meta-item strong{color:var(--branch);font-weight:600}
 .error-card{background:#fff5f5;border:1px solid #f5c6c6;border-radius:10px;padding:20px;text-align:center;display:none}
@@ -470,35 +493,42 @@ function findRelationship() {
 }
 
 function computeRelationship(idA, idB) {
-  if (idA === idB) return { label: 'Same person', path: [idA] };
+  if (idA === idB) return { label: 'Same person', path: [idA], rels: [] };
 
-  function getEdges(id) {
+  function getBloodEdges(id) {
     var p = treeData[id];
     if (!p) return [];
     var edges = [];
     (p.parent_ids || []).forEach(function(pid) { edges.push({ id: pid, rel: 'parent' }); });
     (p.child_ids || []).forEach(function(cid) { edges.push({ id: cid, rel: 'child' }); });
+    return edges;
+  }
+
+  function getAllEdges(id) {
+    var p = treeData[id];
+    if (!p) return [];
+    var edges = getBloodEdges(id);
     (p.partner_ids || []).forEach(function(sid) { edges.push({ id: sid, rel: 'partner' }); });
     return edges;
   }
 
-  function bfsPath(startId, endId) {
+  function bfs(startId, endId, edgeFn) {
     var visited = new Map();
     var queue = [startId];
     visited.set(startId, null);
     while (queue.length > 0) {
       var curr = queue.shift();
       if (curr === endId) {
-        var path = [];
-        var node = endId;
+        var path = [], rels = [], node = endId;
         while (node !== null) {
           path.unshift(node);
           var prev = visited.get(node);
+          if (prev) rels.unshift(prev.rel);
           node = prev ? prev.from : null;
         }
-        return path;
+        return { path: path, rels: rels };
       }
-      getEdges(curr).forEach(function(edge) {
+      edgeFn(curr).forEach(function(edge) {
         if (!visited.has(edge.id) && treeData[edge.id]) {
           visited.set(edge.id, { from: curr, rel: edge.rel });
           queue.push(edge.id);
@@ -509,59 +539,106 @@ function computeRelationship(idA, idB) {
   }
 
   function getAncestors(id) {
-    var ancestors = new Map();
+    var anc = new Map();
     var queue = [{ id: id, gen: 0 }];
     var seen = new Set();
     while (queue.length > 0) {
       var item = queue.shift();
       if (seen.has(item.id)) continue;
       seen.add(item.id);
-      ancestors.set(item.id, item.gen);
+      anc.set(item.id, item.gen);
       var p = treeData[item.id];
-      if (p) {
-        (p.parent_ids || []).forEach(function(pid) {
-          if (treeData[pid]) queue.push({ id: pid, gen: item.gen + 1 });
-        });
-      }
+      if (p) (p.parent_ids || []).forEach(function(pid) {
+        if (treeData[pid]) queue.push({ id: pid, gen: item.gen + 1 });
+      });
     }
-    return ancestors;
+    return anc;
   }
 
-  var ancestorsA = getAncestors(idA);
-  var ancestorsB = getAncestors(idB);
-  var bestLCA = null, bestDist = Infinity, genA_best = 0, genB_best = 0;
-
-  ancestorsA.forEach(function(genA, aid) {
-    if (ancestorsB.has(aid)) {
-      var genB = ancestorsB.get(aid);
-      var total = genA + genB;
-      if (total < bestDist) {
-        bestDist = total;
-        bestLCA = aid;
-        genA_best = genA;
-        genB_best = genB;
+  function findLCA(ancA, ancB) {
+    var best = null, bestDist = Infinity, gA = 0, gB = 0;
+    ancA.forEach(function(genA, aid) {
+      if (ancB.has(aid)) {
+        var total = genA + ancB.get(aid);
+        if (total < bestDist) { bestDist = total; best = aid; gA = genA; gB = ancB.get(aid); }
       }
-    }
-  });
+    });
+    return best ? { id: best, genA: gA, genB: gB } : null;
+  }
 
-  var rawPath = bfsPath(idA, idB);
+  function bloodLabel(upA, upB) {
+    if (upA === 0 && upB === 0) return 'Same person';
+    if (upA === 0) return descendantLabel(upB);
+    if (upB === 0) return ancestorLabel(upA);
+    if (upA === 1 && upB === 1) return 'Siblings';
+    if (upA === 1) return nthLabel(upB - 1) + 'Aunt or Uncle';
+    if (upB === 1) return nthLabel(upA - 1) + 'Niece or Nephew';
+    return cousinLabel(Math.min(upA, upB) - 1, Math.abs(upA - upB));
+  }
+
+  var ancA = getAncestors(idA);
+  var ancB = getAncestors(idB);
+  var lca = findLCA(ancA, ancB);
+
+  // Try blood path first
+  var bloodPath = bfs(idA, idB, getBloodEdges);
+  // Also try full path (includes partners)
+  var fullPath = bfs(idA, idB, getAllEdges);
+
   var label = 'No connection found in tree';
+  var byMarriage = false;
+  var displayPath = fullPath ? fullPath.path : [idA, idB];
+  var displayRels = fullPath ? fullPath.rels : [];
+  var bestLCA = lca ? lca.id : null;
 
-  if (bestLCA) {
-    var upA = genA_best, upB = genB_best;
-    if (upA === 0 && upB === 0) label = 'Same person';
-    else if (upA === 0) label = descendantLabel(upB);
-    else if (upB === 0) label = ancestorLabel(upA);
-    else if (upA === 1 && upB === 1) label = 'Siblings';
-    else if (upA === 1 && upB > 1) label = nthLabel(upB - 1) + 'Aunt or Uncle';
-    else if (upB === 1 && upA > 1) label = nthLabel(upA - 1) + 'Niece or Nephew';
-    else label = cousinLabel(Math.min(upA, upB) - 1, Math.abs(upA - upB));
-  } else {
-    var pA = treeData[idA];
-    if (pA && (pA.partner_ids || []).indexOf(idB) >= 0) label = 'Spouses / Partners';
+  if (lca) {
+    label = bloodLabel(lca.genA, lca.genB);
+    if (bloodPath) { displayPath = bloodPath.path; displayRels = bloodPath.rels; }
+  } else if (fullPath) {
+    // Path uses partner links - figure out in-law relationship
+    var rels = fullPath.rels;
+    var path = fullPath.path;
+    byMarriage = true;
+
+    if (path.length === 2) {
+      label = 'Spouses / Partners';
+    } else {
+      // Find the partner link index
+      var partnerIdx = rels.indexOf('partner');
+      if (partnerIdx >= 0) {
+        // The person connected by marriage
+        var marriedPersonId = path[partnerIdx]; // person on A's side before the marriage link
+        var otherSpouseId = path[partnerIdx + 1]; // spouse on B's side
+
+        // What is A's relationship to the married person?
+        var lcaToMarried = findLCA(ancA, getAncestors(marriedPersonId));
+        // What is B's relationship to the other spouse?
+        var ancOther = getAncestors(otherSpouseId);
+        var lcaToOther = findLCA(getAncestors(idB), ancOther);
+
+        if (lcaToMarried) {
+          var relToMarried = bloodLabel(lcaToMarried.genA, lcaToMarried.genB);
+          label = relToMarried + ' (by marriage)';
+        } else if (lcaToOther) {
+          var relToOther = bloodLabel(lcaToOther.genA, lcaToOther.genB);
+          label = relToOther + "'s Spouse (by marriage)";
+        } else {
+          label = 'Related by Marriage';
+        }
+      }
+    }
   }
 
-  return { label: label, path: rawPath || [idA, idB], genA: genA_best, genB: genB_best, lca: bestLCA, distance: rawPath ? rawPath.length - 1 : null };
+  return {
+    label: label,
+    byMarriage: byMarriage,
+    path: displayPath,
+    rels: displayRels,
+    genA: lca ? lca.genA : 0,
+    genB: lca ? lca.genB : 0,
+    lca: bestLCA,
+    distance: displayPath.length - 1
+  };
 }
 
 function ancestorLabel(gen) {
@@ -592,37 +669,13 @@ function displayResult(result) {
   var nameA = selectedA ? selectedA.name : 'Person A';
   var nameB = selectedB ? selectedB.name : 'Person B';
   document.getElementById('result-relationship').textContent = result.label;
-  document.getElementById('result-names').textContent = nameA + '  <->  ' + nameB;
+  document.getElementById('result-names').textContent = nameA + '  to  ' + nameB;
 
   var chainEl = document.getElementById('path-chain');
   chainEl.innerHTML = '';
+
   if (result.path && result.path.length > 0) {
-    var pathToShow = result.path.length > 10 ? result.path.slice(0, 4).concat([null]).concat(result.path.slice(-4)) : result.path;
-    pathToShow.forEach(function(id, i) {
-      if (id === null) {
-        var el = document.createElement('div');
-        el.className = 'path-line';
-        el.innerHTML = '<div class="path-line-wrap"><div class="path-line-inner"></div></div><div style="font-size:0.72rem;color:#bbb;align-self:center">... more people ...</div>';
-        chainEl.appendChild(el);
-        return;
-      }
-      var profile = treeData[id];
-      var name = profile ? profile.name : id;
-      var isFirst = i === 0;
-      var isLast = i === pathToShow.length - 1;
-      var node = document.createElement('div');
-      node.className = 'path-node';
-      node.innerHTML = '<div class="path-dot" style="' + (isFirst ? 'background:var(--green)' : isLast ? 'background:var(--gold-light)' : '') + '"></div>' +
-        '<div><span class="path-node-name">' + escHtml(name) + '</span>' +
-        (isFirst ? '<span class="path-node-rel">(Person 1)</span>' : isLast ? '<span class="path-node-rel">(Person 2)</span>' : '') + '</div>';
-      chainEl.appendChild(node);
-      if (i < pathToShow.length - 1 && pathToShow[i + 1] !== null) {
-        var conn = document.createElement('div');
-        conn.className = 'path-line';
-        conn.innerHTML = '<div class="path-line-wrap"><div class="path-line-inner"></div></div>';
-        chainEl.appendChild(conn);
-      }
-    });
+    chainEl.innerHTML = buildTreeViz(result);
   }
 
   var meta = document.getElementById('result-meta');
@@ -633,6 +686,68 @@ function displayResult(result) {
 
   document.getElementById('result-card').classList.add('visible');
   document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildTreeViz(result) {
+  var path = result.path;
+  var rels = result.rels || [];
+  var lca = result.lca;
+  var lcaIdx = lca ? path.indexOf(lca) : -1;
+  if (lcaIdx < 0) lcaIdx = Math.floor((path.length - 1) / 2);
+
+  var upLeg = path.slice(0, lcaIdx + 1);
+  var downLeg = path.slice(lcaIdx);
+
+  var html = '<div class="tree-viz">';
+
+  upLeg.forEach(function(id, i) {
+    var p = treeData[id];
+    var name = p ? p.name : id;
+    var isA = i === 0;
+    var isLCA = i === upLeg.length - 1;
+    var rel = i > 0 ? (rels[i - 1] || 'parent') : '';
+    var nodeClass = isA ? 'tviz-node tviz-node-a' : isLCA && downLeg.length > 1 ? 'tviz-node tviz-node-lca' : 'tviz-node tviz-node-mid';
+    var badge = isA ? 'You / Person 1' : isLCA && downLeg.length > 1 ? 'Common Ancestor' : '';
+    var dates = p ? formatDates(p) : '';
+
+    html += '<div class="tviz-row" style="padding-left:' + (i * 28) + 'px">';
+    if (i > 0) {
+      var edgeLabel = rel === 'partner' ? 'married' : 'parent';
+      var edgeClass = rel === 'partner' ? 'tviz-edge-partner' : 'tviz-edge-up';
+      html += '<div class="' + edgeClass + '"><span class="tviz-edge-label">' + edgeLabel + '</span></div>';
+    }
+    html += '<div class="' + nodeClass + '">';
+    html += '<div class="tviz-name">' + escHtml(name) + '</div>';
+    if (dates) html += '<div class="tviz-dates">' + dates + '</div>';
+    if (badge) html += '<div class="tviz-badge">' + badge + '</div>';
+    html += '</div></div>';
+  });
+
+  downLeg.slice(1).forEach(function(id, i) {
+    var p = treeData[id];
+    var name = p ? p.name : id;
+    var isB = i === downLeg.length - 2;
+    var relIdx = lcaIdx + i;
+    var rel = rels[relIdx] || 'child';
+    var depth = upLeg.length - 1;
+    var nodeIndent = Math.max(0, (depth - i - 1) * 28);
+    var nodeClass = isB ? 'tviz-node tviz-node-b' : 'tviz-node tviz-node-mid';
+    var badge = isB ? 'Person 2' : '';
+    var dates = p ? formatDates(p) : '';
+
+    html += '<div class="tviz-row" style="padding-left:' + nodeIndent + 'px">';
+    var edgeLabel = rel === 'partner' ? 'married' : 'child';
+    var edgeClass = rel === 'partner' ? 'tviz-edge-partner' : 'tviz-edge-down';
+    html += '<div class="' + edgeClass + '"><span class="tviz-edge-label">' + edgeLabel + '</span></div>';
+    html += '<div class="' + nodeClass + '">';
+    html += '<div class="tviz-name">' + escHtml(name) + '</div>';
+    if (dates) html += '<div class="tviz-dates">' + dates + '</div>';
+    if (badge) html += '<div class="tviz-badge">' + badge + '</div>';
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  return html;
 }
 
 function hideResults() {
