@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -552,12 +551,27 @@ function computeRelationship(idA, idB) {
     var seen = new Set();
     while (queue.length > 0) {
       var item = queue.shift();
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
+      var normId = numericId(item.id);
+      if (seen.has(normId)) continue;
+      seen.add(normId);
+      // Store by both full ID and numeric ID
       anc.set(item.id, item.gen);
+      anc.set(normId, item.gen);
       var p = treeData[item.id];
+      if (!p) {
+        // Try finding by numeric ID
+        for (var k in treeData) {
+          if (numericId(k) === normId) { p = treeData[k]; break; }
+        }
+      }
       if (p) (p.parent_ids || []).forEach(function(pid) {
         if (treeData[pid]) queue.push({ id: pid, gen: item.gen + 1 });
+        else {
+          var pnum = numericId(pid);
+          for (var k in treeData) {
+            if (numericId(k) === pnum) { queue.push({ id: k, gen: item.gen + 1 }); break; }
+          }
+        }
       });
     }
     return anc;
@@ -566,11 +580,22 @@ function computeRelationship(idA, idB) {
   function findLCA(ancA, ancB) {
     var best = null, bestDist = Infinity, gA = 0, gB = 0;
     ancA.forEach(function(genA, aid) {
-      if (ancB.has(aid)) {
-        var total = genA + ancB.get(aid);
-        if (total < bestDist) { bestDist = total; best = aid; gA = genA; gB = ancB.get(aid); }
+      // Try both full ID and numeric ID match
+      var genB = ancB.has(aid) ? ancB.get(aid) : ancB.get(numericId(aid));
+      if (genB !== undefined) {
+        var total = genA + genB;
+        if (total < bestDist) {
+          bestDist = total; best = aid; gA = genA; gB = genB;
+        }
       }
     });
+    // Resolve best to full ID in treeData if needed
+    if (best && !treeData[best]) {
+      var num = numericId(best);
+      for (var k in treeData) {
+        if (numericId(k) === num) { best = k; break; }
+      }
+    }
     return best ? { id: best, genA: gA, genB: gB } : null;
   }
 
@@ -823,15 +848,3 @@ function setProgress(pct, status, count) {
   if (statusEl && status) statusEl.textContent = status;
   if (countEl && count) countEl.textContent = count;
 }
-function formatDates(p) {
-  if (!p.birth_year && !p.death_year) return '';
-  var b = p.birth_year || '?';
-  return p.death_year ? (b + '-' + p.death_year) : ('b. ' + b);
-}
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-</script>
-</body>
-</html>
